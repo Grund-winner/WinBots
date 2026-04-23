@@ -64,3 +64,48 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const admin = await getSession();
+    if (!admin || admin.role !== 'admin') {
+      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('id');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'ID utilisateur requis' }, { status: 400 });
+    }
+
+    if (userId === admin.id) {
+      return NextResponse.json({ error: 'Vous ne pouvez pas supprimer votre propre compte' }, { status: 400 });
+    }
+
+    const targetUser = await db.user.findUnique({ where: { id: userId } });
+    if (!targetUser) {
+      return NextResponse.json({ error: 'Utilisateur non trouve' }, { status: 404 });
+    }
+
+    // Delete related records
+    await db.botUnlock.deleteMany({ where: { userId } });
+    await db.postbackEvent.deleteMany({ where: { userId } });
+    await db.monthlyReward.deleteMany({ where: { userId } });
+
+    // Delete sessions for this user
+    const sessions = await db.siteConfig.findMany({ where: { key: { startsWith: 'session_' } } });
+    for (const session of sessions) {
+      if (session.value === userId) {
+        await db.siteConfig.delete({ where: { key: session.key } });
+      }
+    }
+
+    await db.user.delete({ where: { id: userId } });
+
+    return NextResponse.json({ message: 'Utilisateur supprime avec succes' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

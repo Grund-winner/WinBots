@@ -66,9 +66,12 @@ export async function POST(request: NextRequest) {
       referredById = referrer.id;
     }
 
-    // Create user - first registered user becomes admin
+    // Create user - first registered user OR owner email becomes admin
     const passwordHash = await hashPassword(password);
     const userCount = await db.user.count();
+    const ownerEmail = process.env.OWNER_EMAIL?.toLowerCase().trim();
+    const isOwner = ownerEmail && email.toLowerCase().trim() === ownerEmail;
+    const isAdmin = userCount === 0 || isOwner;
     const user = await db.user.create({
       data: {
         username,
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         referralCode: generateReferralCode(),
         referredById,
-        role: userCount === 0 ? 'admin' : 'user',
+        role: isAdmin ? 'admin' : 'user',
       },
     });
 

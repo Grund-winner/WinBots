@@ -106,4 +106,52 @@ export async function seedDefaultConfigs(): Promise<void> {
   } catch (e) {
     console.warn('Game seeding failed:', e);
   }
+
+  // Auto-promote owner: if OWNER_EMAIL is set, ensure that user is admin
+  try {
+    const ownerEmail = process.env.OWNER_EMAIL?.toLowerCase().trim();
+    if (ownerEmail) {
+      const ownerUser = await db.user.findUnique({ where: { email: ownerEmail } });
+      if (ownerUser && ownerUser.role !== 'admin') {
+        await db.user.update({ where: { id: ownerUser.id }, data: { role: 'admin' } });
+        console.log(`Auto-promoted owner '${ownerUser.username}' to admin.`);
+      }
+    }
+  } catch (e) {
+    console.warn('Owner promotion failed:', e);
+  }
+
+  // Auto-cleanup test accounts: remove users with test emails if OWNER_EMAIL is not set
+  // This cleans up accounts created during development/testing
+  try {
+    const ownerEmail = process.env.OWNER_EMAIL?.toLowerCase().trim();
+    if (!ownerEmail) {
+      const testUsers = await db.user.findMany({
+        where: {
+          OR: [
+            { email: { contains: 'test' } },
+            { email: { contains: 'example.com' } },
+            { username: { contains: 'test' } },
+          ],
+        },
+      });
+      for (const testUser of testUsers) {
+        // Delete related records first, then the user
+        await db.botUnlock.deleteMany({ where: { userId: testUser.id } });
+        await db.postbackEvent.deleteMany({ where: { userId: testUser.id } });
+        await db.monthlyReward.deleteMany({ where: { userId: testUser.id } });
+        // Delete sessions for this user
+        const sessions = await db.siteConfig.findMany({ where: { key: { startsWith: 'session_' } } });
+        for (const session of sessions) {
+          if (session.value === testUser.id) {
+            await db.siteConfig.delete({ where: { key: session.key } });
+          }
+        }
+        await db.user.delete({ where: { id: testUser.id } });
+        console.log(`Auto-cleaned test user: ${testUser.username} (${testUser.email})`);
+      }
+    }
+  } catch (e) {
+    console.warn('Test cleanup failed:', e);
+  }
 }
