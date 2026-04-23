@@ -66,8 +66,9 @@ export async function POST(request: NextRequest) {
       referredById = referrer.id;
     }
 
-    // Create user
+    // Create user - first registered user becomes admin
     const passwordHash = await hashPassword(password);
+    const userCount = await db.user.count();
     const user = await db.user.create({
       data: {
         username,
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         referralCode: generateReferralCode(),
         referredById,
+        role: userCount === 0 ? 'admin' : 'user',
       },
     });
 

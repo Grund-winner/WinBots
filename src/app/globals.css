@@ -135,6 +135,15 @@
   background: transparent;
 }
 
+/* Hide scrollbar for horizontal scroll sections */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Ensure inputs don't zoom on iOS */
 @supports (-webkit-touch-callout: none) {
   input[type="text"],

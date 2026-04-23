@@ -186,7 +186,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Games Showcase - Horizontal scroll on mobile */}
+      {/* Games Showcase - Horizontal scroll, original image dimensions, no names overlay */}
       <section className="py-12 sm:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
@@ -194,7 +194,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-10"
+            className="text-center mb-8"
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3">Jeux Disponibles</h2>
             <p className="text-sm sm:text-base text-slate-500 max-w-md mx-auto">
@@ -203,36 +203,32 @@ export default function LandingPage() {
           </motion.div>
 
           {gamesLoading ? (
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="shrink-0 w-[150px] sm:w-auto sm:flex-1 aspect-[16/10] rounded-2xl" />
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
+              {[...Array(8)].map((_, i) => (
+                <Skeleton key={i} className="shrink-0 w-[120px] h-[160px] rounded-2xl" />
               ))}
             </div>
           ) : (
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible">
+            <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
               {games.map((game, i) => (
                 <motion.div
                   key={game.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="shrink-0 w-[150px] sm:w-auto sm:flex-1 snap-start"
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  className="shrink-0 snap-start"
                 >
-                  <div className="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-900">
-                    <div className="relative aspect-[16/10]">
+                  <div className="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 w-[120px] sm:w-[130px]">
+                    <div className="relative" style={{ width: '120px', height: '160px' }}>
                       <Image
                         src={game.image}
                         alt={game.name}
-                        fill
+                        width={120}
+                        height={160}
                         unoptimized
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      {/* Game name only */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
-                        <h3 className="text-white font-bold text-sm sm:text-base">{game.name}</h3>
-                      </div>
                     </div>
                   </div>
                 </motion.div>

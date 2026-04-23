@@ -27,6 +27,11 @@ const CopyIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
 );
 
+// Check SVG (for copied state)
+const CheckBadgeIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>
+);
+
 // Share SVG
 const ShareIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
@@ -45,6 +50,11 @@ const CheckIcon = () => (
 // Lock SVG
 const LockIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+);
+
+// Play SVG
+const PlayIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white"><path d="M8 5.14v14l11-7-11-7z"/></svg>
 );
 
 interface UserStats {
@@ -80,6 +90,7 @@ export default function DashboardPage() {
   const [games, setGames] = useState<GameData[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copiedPromo, setCopiedPromo] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'bots' | 'invite'>('overview');
 
   const fetchStats = useCallback(async () => {
@@ -124,6 +135,18 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyPromoCode = () => {
+    if (config.promo_code) {
+      navigator.clipboard.writeText(config.promo_code);
+      setCopiedPromo(true);
+      setTimeout(() => setCopiedPromo(false), 2000);
+    }
+  };
+
+  const copyAffiliateLink = () => {
+    navigator.clipboard.writeText(personal1WinLink);
+  };
+
   const shareWhatsApp = () => {
     const link = typeof window !== 'undefined' ? `${window.location.origin}?ref=${user?.referralCode}` : '';
     const text = `Tu cherches un moyen de gagner plus sur les jeux casino ? Rejoins WinBots et accede a des bots de prediction gratuits pour Aviator, Crash, Dice et plus. Inscription rapide, premier bot debloque immediatement. Clique ici : ${link}`;
@@ -145,7 +168,6 @@ export default function DashboardPage() {
 
   const rankInfo = RANK_THRESHOLDS.find(r => r.rank === user?.rank) || RANK_THRESHOLDS[0];
   const referralLink = typeof window !== 'undefined' ? `${window.location.origin}?ref=${user?.referralCode}` : '';
-  // Personalized 1win affiliate link with sub1=user_id for postback tracking
   const personal1WinLink = user ? `${config.affiliate_link}?sub1=${user.id}` : config.affiliate_link;
 
   // Check referral code from URL
@@ -158,20 +180,6 @@ export default function DashboardPage() {
       }
     }
   }, []);
-
-  // Build unlock label for a game
-  const getUnlockLabel = (game: GameData): string => {
-    switch (game.unlockType) {
-      case 'free':
-        return 'Inscription gratuite';
-      case 'deposit':
-        return `Depot cumule ${game.unlockValue}$`;
-      case 'referral':
-        return `${game.unlockValue} filleuls verifies`;
-      default:
-        return '';
-    }
-  };
 
   if (!user) return null;
 
@@ -191,7 +199,10 @@ export default function DashboardPage() {
             </div>
             <Badge variant="secondary" className={`${rankInfo.color} text-white rounded-full text-xs px-2 py-0.5`}>{rankInfo.label}</Badge>
             {user.role === 'admin' && (
-              <Button variant="outline" size="sm" onClick={() => navigate('admin')} className="rounded-full text-xs h-7 px-2">Admin</Button>
+              <Button variant="outline" size="sm" onClick={() => navigate('admin')} className="rounded-full text-xs h-7 px-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 mr-1"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                Admin
+              </Button>
             )}
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-slate-400 rounded-full h-8 w-8 p-0">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
@@ -272,8 +283,8 @@ export default function DashboardPage() {
                       <div className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-100 to-blue-100 text-xs font-bold text-sky-700 tracking-wider">
                         {config.promo_code}
                       </div>
-                      <Button onClick={() => { navigator.clipboard.writeText(config.promo_code); }} variant="outline" size="sm" className="rounded-lg h-7 w-7 p-0">
-                        <CopyIcon />
+                      <Button onClick={copyPromoCode} variant="outline" size="sm" className={`rounded-lg h-7 w-7 p-0 transition-all duration-200 ${copiedPromo ? 'bg-emerald-50 border-emerald-200' : ''}`}>
+                        {copiedPromo ? <CheckBadgeIcon /> : <CopyIcon />}
                       </Button>
                     </div>
                   )}
@@ -323,41 +334,59 @@ export default function DashboardPage() {
           {activeTab === 'bots' && (
             <motion.div key="bots" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {games.length === 0 ? (
-                <div className="space-y-3">
-                  {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-40 rounded-2xl" />)}
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {[...Array(15)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-2xl" />)}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                   {games.map((game) => {
                     const isUnlocked = unlockedBotIds.includes(game.slug) || isGameUnlocked(game, {
                       totalDeposits: user.totalDeposits,
                       verifiedRefCount: user.verifiedRefCount,
                     });
                     return (
-                      <motion.div key={game.id} whileTap={{ scale: 0.98 }} transition={{ duration: 0.15 }}>
-                        <Card className={`border-0 shadow-sm h-full ${isUnlocked ? 'bg-white' : 'bg-white opacity-90'}`}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className={`w-11 h-11 rounded-2xl ${game.color} flex items-center justify-center text-white`}>
-                                {isUnlocked ? <CheckIcon /> : <LockIcon />}
-                              </div>
-                              <Badge variant="secondary" className="rounded-full text-xs">
-                                {game.tier === 1 ? 'Gratuit' : `Niveau ${game.tier}`}
-                              </Badge>
-                            </div>
-                            <h3 className="font-semibold text-slate-900 text-sm mb-1">{game.name}</h3>
-                            <p className="text-xs text-slate-500 mb-4 leading-relaxed">{game.description}</p>
-                            {isUnlocked ? (
-                              <Button className="w-full rounded-xl h-10 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm">
-                                Utiliser le bot
-                              </Button>
-                            ) : (
-                              <div className="p-2.5 rounded-xl bg-slate-100 text-center">
-                                <p className="text-xs text-slate-500">{getUnlockLabel(game)}</p>
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="group"
+                      >
+                        <div className={`relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 ${!isUnlocked ? 'opacity-70' : ''}`}>
+                          {/* Game image - original aspect ratio 238x319 */}
+                          <div className="relative aspect-[3/4]">
+                            <Image
+                              src={game.image}
+                              alt={game.name}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                            />
+                            {/* Gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            {/* Lock overlay for locked games */}
+                            {!isUnlocked && (
+                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                  <LockIcon />
+                                </div>
                               </div>
                             )}
-                          </CardContent>
-                        </Card>
+                            {/* Play button overlay for unlocked games */}
+                            {isUnlocked && (
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-200">
+                                  <PlayIcon />
+                                </div>
+                              </div>
+                            )}
+                            {/* Game name at bottom */}
+                            <div className="absolute bottom-0 left-0 right-0 p-2">
+                              <p className="text-white font-semibold text-xs truncate drop-shadow-sm">{game.name}</p>
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -377,8 +406,8 @@ export default function DashboardPage() {
                     <div className="flex-1 p-2.5 rounded-xl bg-slate-100 text-xs text-slate-600 font-mono truncate min-w-0">
                       {referralLink}
                     </div>
-                    <Button onClick={copyReferralLink} variant="outline" size="sm" className="rounded-xl shrink-0 h-9 w-9 p-0">
-                      {copied ? <CheckIcon /> : <CopyIcon />}
+                    <Button onClick={copyReferralLink} variant="outline" size="sm" className={`rounded-xl shrink-0 h-9 w-9 p-0 transition-all duration-200 ${copied ? 'bg-emerald-50 border-emerald-200' : ''}`}>
+                      {copied ? <CheckBadgeIcon /> : <CopyIcon />}
                     </Button>
                   </div>
                   <div className="text-xs text-slate-400 mb-3">Code : {user.referralCode}</div>
