@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Inscription:\nChamp pour la saisie d'un lien\nRevenu:\nChamp pour la saisie d'un lien\nTous les dépôts:\nChamp pour la saisie d'un lien\nPremier dépôt:\nChamp pour la saisie d'un lien\nDépôt suivant:\nChamp pour la saisie d'un lien\nLancer l'application:\nChamp pour la saisie d'un lien\n{event_id} - event id",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1776942800,
+  "id": "202604231913164e692e53b34f4a61",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202604231913164e692e53b34f4a61",
+  "usage": {
+    "completion_tokens": 100,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1382,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1482
+  }
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "url": "https://docs.bemob.com/en/1win-settings",
+    "name": "1WIN Settings | BeMob Help Center",
+    "snippet": "After 1WIN is added with BeMob, it is required to add the postback URL on the side of this affiliate network which will notify the tracker about each incoming conversion.",
+    "host_name": "docs.bemob.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://1win.partners/panel",
+    "name": "Affiliate Program 1win - 1win Partners",
+    "snippet": "Join the 1win affiliate program to earn commissions by promoting services effectively.",
+    "host_name": "1win.partners",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://helpdesk.everflow.io/customer/postback-tracking-link-configurations-for-affiliate-marketing-platforms",
+    "name": "Postback & Tracking Link Configurations For Affiliate",
+    "snippet": "A comprehensive cheat sheet detailing exact parameter mappings and postback URL formats for setting up tracking links and conversion postbacks across multiple affiliate networks and tracking platforms like Everflow, HasOffers, Cake, Impact, and more.",
+    "host_name": "helpdesk.everflow.io",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.scaleo.io/blog/affiliate-marketing-postback-url-tracking",
+    "name": "Postback URL Tracking in Affiliate Marketing—Full Guide",
+    "snippet": "A working postback flow has four steps: generate the click ID, store it server-side, trigger a qualifying conversion event, and send the original click ID back to the affiliate platform in a server-to-server request.",
+    "host_name": "www.scaleo.io",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://1win.com",
+    "name": "1win Online Casino & Sports Betting | Official Website",
+    "snippet": "All it takes is one deposit - then collect your daily raffle ticket and increase your odds by staying active. The more tickets you gather, the better your chances to drive home in a supercar.",
+    "host_name": "1win.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://clickervolt.com/glossary/postback-url",
+    "name": "What Is a Postback URL? The 2026 Guide for Affiliate Marketers",
+    "snippet": "A postback URL is a server-to-server callback that an affiliate network fires to your tracking platform when a conversion happens. No browser involved. No JavaScript. No cookies. The network's server talks directly to your tracker's server and says, \"this click just converted, here are the details\".",
+    "host_name": "clickervolt.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dev.to/kervi_11_/confused-about-the-postback-url-and-pingback-url-heres-a-simple-guide-4inm",
+    "name": "Confused About the Postback URL and Pingback URL? Here’s a",
+    "snippet": "Without a valid click ID, postbacks won’t attribute conversions properly. Solution: Ensure that your tracking link includes a unique click identifier before sending users to the advertiser’s site.",
+    "host_name": "dev.to",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  }
+]

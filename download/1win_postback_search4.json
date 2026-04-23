@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://help.trackier.com/en/articles/8107293-publisher-tracking-link-parameters-and-postback-macros",
+    "name": "Publisher Tracking Link Parameters and Postback Macros",
+    "snippet": "Trackier receives click data from the publisher and sends it back via postbacks when there is a conversion. Parameters and macros are required to transfer data. Read more",
+    "host_name": "help.trackier.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help-center.affise.com/en/articles/6564528-cross-postback-link-macros",
+    "name": "Cross-postback link macros",
+    "snippet": "Cross- postback URL is a link used to send conversion info to any third-party place. A third party provides this link with the necessary parameters . Read more",
+    "host_name": "help-center.affise.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help-center.affisereach.com/en/articles/6127765-postback-macros",
+    "name": "Postback macros - Reach Help Center",
+    "snippet": "A postback link allows you to receive information about committed conversion. You need to provide the link and your parameters , and to fill them in with ... Read more",
+    "host_name": "help-center.affisereach.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://helpdesk.everflow.io/customer/postback-tracking-link-configurations-for-affiliate-marketing-platforms",
+    "name": "Postback & Tracking Link Configurations For Affiliate",
+    "snippet": "Jan 27, 2026 — A comprehensive cheat sheet detailing exact parameter mappings and postback URL formats for setting up tracking links and conversion postbacks. Read more",
+    "host_name": "helpdesk.everflow.io",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help.offershub.com/knowledge-base/postback-url-macros",
+    "name": "Advertiser Postback URL Parameter List |",
+    "snippet": "Parameter, Description, Required. click id , Click/Transaction ID, Yes. network_id, ID of the affiliate network. Read more",
+    "host_name": "help.offershub.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.gamesight.io/docs/postbacks",
+    "name": "Postbacks",
+    "snippet": "When filling out the parameters you can select from a list of macros that we will replace with information about the touchpoint, event, and goal . Screen Shot ... Read more",
+    "host_name": "docs.gamesight.io",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://dzone.com/articles/postback-and-s2s-conversion-tracking-guide",
+    "name": "Mastering Postback Tracking and S2S Conversion Tracking",
+    "snippet": "Feb 12, 2026 — Agree on required macros such as click ID parameter name, goal ID, revenue, and currency. Exchange and store secure credentials, including ... Read more",
+    "host_name": "dzone.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://support.appsflyer.com/hc/en-us/articles/207273946-Postback-macros-for-ad-networks",
+    "name": "Postback macros for ad networks – Help Center",
+    "snippet": "Dec 22, 2025 — As an ad network, you can define the content and endpoints of postbacks sent to you as part of your integration with AppsFlyer. Read more",
+    "host_name": "support.appsflyer.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.altercpa.pro/en/help/postbacks",
+    "name": "Postbacks",
+    "snippet": "When submitting leads, you can use these macros and URL parameters of the same name to specify a unique visit ID and other necessary information. We use twelve ... Read more",
+    "host_name": "www.altercpa.pro",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.trafficmanager.com/docs/Postback%20URL%20integration%20between%20TrafficManager%20and%203rd%20party%20platforms.pdf",
+    "name": "How to do a Postback integration between",
+    "snippet": "To find the platform Postback URL you need to set up for your offer, just click the “Edit button” (See the image below) from that specific offer page and copy ... Read more 27 pages",
+    "host_name": "www.trafficmanager.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

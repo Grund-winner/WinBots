@@ -1,0 +1,74 @@
+[
+  {
+    "url": "https://docs.keitaro.io/en/conversions-and-postback/adding-affiliate-networks.html",
+    "name": "Affiliate networks in Keitaro",
+    "snippet": "A required parameter in each Postback link is the parameter for click ID . In Keitaro it is subid . You need to request information about which parameter for ... Read more\nIn the parameters of the affiliate network offers the following was prescribed: sub1={subid}, that is, we transfer our subid to the placeholder sub1 in the link ...",
+    "host_name": "docs.keitaro.io",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.bemob.com/en/1win-settings",
+    "name": "1WIN Settings | BeMob Help Center",
+    "snippet": "After 1WIN is added with BeMob, it is required to add the postback URL on the side of this affiliate network which will notify the tracker about each incoming conversion.",
+    "host_name": "docs.bemob.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://1win.partners/panel",
+    "name": "Affiliate Program 1win - 1win Partners",
+    "snippet": "Join the 1win affiliate program to earn commissions by promoting services effectively.",
+    "host_name": "1win.partners",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://helpdesk.everflow.io/customer/postback-tracking-link-configurations-for-affiliate-marketing-platforms",
+    "name": "Postback & Tracking Link Configurations For Affiliate",
+    "snippet": "What this guide covers: This comprehensive resource provides exact parameter mappings, macro syntax, and postback URL formats for configuring tracking links and conversion postbacks across 20+ affiliate marketing platforms including Everflow, Impact, CAKE, TUNE, Affise, Awin, CJ Affiliate, and more.",
+    "host_name": "helpdesk.everflow.io",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.scaleo.io/blog/affiliate-marketing-postback-url-tracking",
+    "name": "Postback URL Tracking in Affiliate Marketing—Full Guide",
+    "snippet": "A postback URL is the endpoint used to send a server-to-server conversion event from the advertiser’s backend to the affiliate tracking platform. It usually includes the original click ID plus event details such as transaction ID, payout, status, or currency.",
+    "host_name": "www.scaleo.io",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help.trackier.com/en/articles/8107277-learn-the-key-parameters-for-setting-up-advertiser-postback",
+    "name": "Learn the Key Parameters for Setting Up Advertiser Postback",
+    "snippet": "Here you will find the list of parameters that Trackier supports for advertiser S2S integration. For each parameter, place the appropriate advertiser macro to get the required information. You need to ask the advertiser to add their click id macro equal to this parameter in a postback.",
+    "host_name": "help.trackier.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.scribd.com/document/588058964/KB-44732467-171221-1150-206",
+    "name": "Postback Setup Guide for Affiliates | PDF | Computer",
+    "snippet": "They use GET parameters and a dynamic URL to pass information about registrations, deposits, and other events between systems. Setting up a Postback URL in an affiliate admin panel involves adding the URL name, goals to trigger, parameters to send, and saving it.",
+    "host_name": "www.scribd.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help-center.peerclick.com/en/articles/6643019-track-conversions-via-s2s-postback-url",
+    "name": "Track Conversions via S2S Postback URL - Peerclick",
+    "snippet": "Copy the posback URL with PeerClick parameters and offer source macros at the offer source settings to set up postback in the appropriate settings section on the side of your affiliate network.",
+    "host_name": "help-center.peerclick.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  }
+]

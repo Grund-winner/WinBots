@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://docs.keitaro.io/en/conversions-and-postback/adding-affiliate-networks.html",
+    "name": "Affiliate networks in Keitaro",
+    "snippet": "Postback URL . The affiliate network sends conversions to the tracker using this link. Add the link in the affiliate network's private cabinet in the Global ... Read more",
+    "host_name": "docs.keitaro.io",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://cpa.rip/en/partners/1win-partners",
+    "name": "1win affiliate program",
+    "snippet": "The official affiliate program of the betting company 1win . It is a well-known brand. It pays out from 50% on a RevShare basis and up to $80 on CPA. Read more",
+    "host_name": "cpa.rip",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://doc.voluum.com/article/submitting-a-postback-url-to-an-affiliate-network-platform",
+    "name": "Submitting a Postback URL to an Affiliate Network Platform",
+    "snippet": "So the whole parameter used to send the click ID value back to Voluum in the postback URL will look like this: cid={s2} . payout : This is an optional parameter ... Read more",
+    "host_name": "doc.voluum.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/posts/gypsy-m-b3634b2ba_the-quiet-upgrade-behind-scalable-affiliate-activity-7422645327121408000-UcjG",
+    "name": "Yashaswini M's Post",
+    "snippet": "Affiliate & Influence Manager at 1win Partners | looking for HQ traffic! ... Think of sub1 –sub5 as custom tags you control inside your tracking ... Read more",
+    "host_name": "www.linkedin.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help-center.affise.com/en/articles/6483741-affiliate-postback-url-macros",
+    "name": "Affiliate postback URL macros",
+    "snippet": "⚠️ There is no clickid macro for Affiliate postback on Affise . Use {sub1} - {sub8} macros to pass this value. Please contact the Affise Customer Support ... Read more",
+    "host_name": "help-center.affise.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://help.clickflare.io/en/tracking/how-to-submit-an-s2s-postback-url-to-an-affiliate-network-in-clickflare",
+    "name": "How to Submit an S2S Postback URL to an Affiliate",
+    "snippet": "Verify that the postback URL is correctly formatted with the right tokens. Test the postback manually with a valid Click ID . Contact your affiliate network ... Read more",
+    "host_name": "help.clickflare.io",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/posts/acceleration-partners_ai-is-redefining-discovery-why-pr-affiliate-activity-7422292686402928642-7MHj",
+    "name": "Why PR & Affiliate Can't Work in Silos | Acceleration Partners",
+    "snippet": "That's where sub1 –sub5 matter. Think of sub1 –sub5 as custom tags you control inside your tracking link . You use them to label the click at a ... Read more",
+    "host_name": "www.linkedin.com",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://es.linkedin.com/in/marc-valldep%C3%A9rez-837a24b2",
+    "name": "Marc Valldepérez - Digital Marketing",
+    "snippet": "Publisher Account Manager · ExoClick Digital Marketing · With a robust background as Senior Account Manager at TORO Advertising, the focus has been on cultivating impactful affiliate partnerships ,\nExoClick With a robust background as Senior Account Manager at TORO Advertising, the focus has… · Experiencia: ExoClick · Educación: IES Vidal I Barraquer ...",
+    "host_name": "es.linkedin.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://es.linkedin.com/in/robinschreurs",
+    "name": "Robin Schreurs - Antidote | UX & Playtesting Solution for",
+    "snippet": "Antidote | UX & Playtesting Solution for Game Developers & Publishers Experiencia: Antidote | UX & Playtesting Solution for Game Developers & Publishers · Educación: Maastricht University School of Business and Economics ...",
+    "host_name": "es.linkedin.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/posts/mgid-inc-_affiliate-campaigns-dont-fail-because-activity-7416833919272001537-k0fn",
+    "name": "Optimize Affiliate Campaigns with Targeted Traffic Strategies",
+    "snippet": "Affiliate & Influence Manager at 1win Partners | looking for HQ traffic! ... The quiet upgrade behind scalable affiliate campaigns — Postbacks Postback ... Think ...",
+    "host_name": "www.linkedin.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

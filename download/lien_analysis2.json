@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Googlelet\nProgramme d'affiliation 1win\nComment configurer les postb\nChatGPT\n1win-partners.com/panel/links?page=1\nGmail\nYouTube\nMaps\nMergin\nAdobe Acrobat\nAfficher le tableau d...\nCréer un token GitH...\nConfirmer votre identité\nLien de suivi d'événement\nInscription:\nChamp pour la saisie d'un lien\nNouveau message!\nRevenu:\nChamp pour la saisie d'un lien\nTous les dépôts:\nChamp pour la saisie d'un lien\nPremier dépôt:\nChamp pour la saisie d'un lien\nDépôt suivant:\nChamp pour la saisie d'un lien\nLancer l'application:\nChamp pour la saisie d'un lien\n{event_id} - event id\n33°C\nEclaircies\nRechercher\n11:10\n23/04/2026",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1776942831,
+  "id": "20260423191344ff9498dc04414f9d",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260423191344ff9498dc04414f9d",
+  "usage": {
+    "completion_tokens": 208,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1417,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1625
+  }
+}

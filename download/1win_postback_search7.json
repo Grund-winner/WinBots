@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://docs.keitaro.io/en/conversions-and-postback/adding-affiliate-networks.html",
+    "name": "Affiliate networks in Keitaro",
+    "snippet": "In the Offer Parameters section, we send our subid value to {aff_click_id}, and get back our subid value from {aff_click_id} in a Postback URL. Add a parameter ... Missing: {goal} format\nIn the Offer Parameters section, we send our subid value to {aff_click_id}, and get back our subid value from {aff_click_id} in a Postback URL. Add a parameter ... Missing: {goal} | Show results with: {goal}",
+    "host_name": "docs.keitaro.io",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://1win-partners.com",
+    "name": "1win affiliate program",
+    "snippet": "Join the official 1win affiliate program. Log in to your affiliate account, get access to exclusive benefits, and collaborate with a top-tier platform.",
+    "host_name": "1win-partners.com",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ke.linkedin.com/in/anastasiiazinchenko",
+    "name": "Anastasia Z. - Marketing. Analytics. Product.",
+    "snippet": "Built marketing and analytics infrastructure from scratch, integrated tracking and reporting systems for data-driven decisions. Personally managed marketing: ...\nPersonally managed marketing: affiliate partnerships, media-buying, campaign analytics and performance optimization. Achieved profitability at an early ...",
+    "host_name": "ke.linkedin.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.linkedin.com/in/sergio-burret-veepn",
+    "name": "Sergio Burret - VeePN",
+    "snippet": "Experience: VeePN · Education: Liverpool Hope University ...",
+    "host_name": "www.linkedin.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://ru.linkedin.com/in/elenazhuchkova/en",
+    "name": "Elena Zhuchkova - Head of User Acquisition",
+    "snippet": "Head of Digital · KASSIR.RU Head of User Acquisition | Marketing Team Lead | Product Marketing Lead | 10+ years of experience · Experience: KASSIR.RU · Education: Moscow City ...",
+    "host_name": "ru.linkedin.com",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://de.linkedin.com/in/yuliya-pchela-95326a64",
+    "name": "Yuliya Pchela – AppQuantum",
+    "snippet": "AppQuantum Outcome driven Sr. Performance Marketing Specialist with 6 YOE at the largest IT company… · Berufserfahrung: AppQuantum · Ausbildung: Московский ...",
+    "host_name": "de.linkedin.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://1win.biz.pk/partners",
+    "name": "1Win Partners - Affiliate Program, Sign Up and Earn Money",
+    "snippet": "After registration and login, partners get access to their dashboard in 1Win Affiliate Program where they can use marketing tools, analytics and ... Missing: postback macros {clickid} {sub1}",
+    "host_name": "1win.biz.pk",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://es.linkedin.com/in/guillaume-favier",
+    "name": "Guillaume Favier - Co-Founder & CTO at DataOpp | LinkedIn",
+    "snippet": "Experiencia: DataOpp · Ubicación: Barcelona y alrededores · Más de 500 contactos en LinkedIn. Mira el perfil de Guillaume ...",
+    "host_name": "es.linkedin.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://docs.bemob.com/en/1win-settings",
+    "name": "1WIN Settings | BeMob Help Center",
+    "snippet": "To pass click ID manually the sub1= {clickId} part should be added at the end of each offer URL from 1WIN and the automatic click ID passing should be switched off in the 1WIN template. Here is the sample of 1WIN template and offer settings, when you decide to pass the click ID manually.",
+    "host_name": "docs.bemob.com",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://mrpostback.com",
+    "name": "Mr Postback — Your Friendly Postback Guide",
+    "snippet": "Format Postbacks Correctly Paste your publisher's postback URL and get instant field mapping instructions for your platform. No guesswork. No broken tracking. Just copy, paste, and implement.",
+    "host_name": "mrpostback.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

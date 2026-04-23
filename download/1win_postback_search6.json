@@ -1,0 +1,29 @@
+[
+  {
+    "url": "https://trackier.com/postback-url-setup-guide-for-marketers-7-easy-steps",
+    "name": "Postback URL Setup Guide for Marketers: 7 Practical Steps",
+    "snippet": "2 . Advertiser captures and stores the click ID · 3. User completes a conversion event on the advertiser site · 4.",
+    "host_name": "trackier.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://easylist-downloads.adblockplus.org/liste_fr%2Beasylist.txt?swcfpc=1",
+    "name": "liste_fr+easylist.txt - V - Adblock Plus",
+    "snippet": "... clickid = ://go.*&zoneid= ://go.*?af_sub= ://go.*?zoneid= ://goto.*&zoneid= ://goto.*?zoneid= ://imads. ://install.*& clickid = :// link .*&siteid=$third-party ...",
+    "host_name": "easylist-downloads.adblockplus.org",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://cdn.jsdelivr.net/gh/bmyjacks/adlists@master/specific-area/AdGuard-French-Filter.txt",
+    "name": "AdGuard-French-Filter.txt - jsDelivr",
+    "snippet": "... URL parts (there's `general_url.txt` for that). Also, it must be domains that are used in a third-party context. ! ! Good: ||doubleclick.net^$third-party ...",
+    "host_name": "cdn.jsdelivr.net",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  }
+]

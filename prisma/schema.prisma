@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  role          String   @default("user") // "user" or "admin"
+  referralCode  String   @unique
+  referredById  String?
+  referredBy    User?    @relation("Referrals", fields: [referredById], references: [id])
+  referrals     User[]   @relation("Referrals")
+  isVerified1Win Boolean  @default(false)
+  totalDeposits Float    @default(0)
+  verifiedRefCount Int    @default(0)
+  rank          String   @default("bronze") // bronze, silver, gold, diamond
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  postbackEvents   PostbackEvent[]
+  botUnlocks       BotUnlock[]
+  monthlyRewards   MonthlyReward[]
+}
+
+model PostbackEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId   String   // 1win event_id
+  eventType String   // registration, first_deposit, deposit, revenue
+  amount    Float?   // deposit amount
+  currency  String?  @default("USD")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+}
+
+model BotUnlock {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  botId       String   // aviator, crash, dice, mines, jetx, rocket, lucky_jet, spaceman, speed_cash, coin_run
+  botName     String
+  unlockedVia String   // "registration", "deposit_5", "deposit_10", "deposit_20", "referral_5", "referral_15", "referral_30"
+  unlockedAt  DateTime @default(now())
+
+  @@unique([userId, botId])
+  @@index([userId])
+}
+
+model MonthlyReward {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month     String   // "2026-04"
+  rank      Int      // 1, 2, 3
+  amount    Float
+  paid      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, month])
+  @@index([month])
+}
+
+model SiteConfig {
+  id          String @id @default(cuid())
+  key         String @unique
+  value       String
+  updatedAt   DateTime @updatedAt
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  image       String
+  description String
+  color       String   @default("bg-sky-500")
+  icon        String   @default("Zap")
+  isActive    Boolean  @default(true)
+  unlockType  String   @default("free") // "free", "deposit", "referral"
+  unlockValue Int      @default(0)
+  tier        Int      @default(1)
+  sortOrder   Int      @default(0)
+  showOnLanding Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
