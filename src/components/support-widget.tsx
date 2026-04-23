@@ -107,6 +107,31 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
+// ─── Parse simple markdown: **bold** and newlines ────────────────────────────
+
+function parseMarkdown(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  // Split by newlines first, then process bold in each line
+  const lines = text.split('\n');
+  lines.forEach((line, lineIdx) => {
+    // Process **bold** patterns
+    const segments = line.split(/(\*\*[^*]+\*\*)/g);
+    segments.forEach((seg) => {
+      if (seg.startsWith('**') && seg.endsWith('**')) {
+        const inner = seg.slice(2, -2);
+        parts.push(<strong key={`b-${parts.length}`} className="font-semibold">{inner}</strong>);
+      } else if (seg) {
+        parts.push(seg);
+      }
+    });
+    // Add line break (not after the last line)
+    if (lineIdx < lines.length - 1) {
+      parts.push(<br key={`br-${lineIdx}`} />);
+    }
+  });
+  return parts;
+}
+
 // ─── Typing Indicator ────────────────────────────────────────────────────────
 
 function TypingIndicator() {
@@ -774,8 +799,8 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 )}
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-100 text-slate-800 rounded-bl-sm'}`}>
-                      {msg.content}
+                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-100 text-slate-800 rounded-bl-sm'}`}>
+                      {msg.role === 'assistant' ? parseMarkdown(msg.content) : msg.content}
                     </div>
                   </div>
                 ))}

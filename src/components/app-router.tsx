@@ -61,10 +61,13 @@ export default function AppRouter() {
     return null;
   }
 
+  const dashboardPages = ['dashboard', 'bots', 'referrals', 'leaderboard', 'admin'];
+  const showWidget = user && dashboardPages.includes(currentPage);
+
   return (
     <>
       <PageContent currentPage={currentPage} navigate={navigate} />
-      {user && (
+      {showWidget && (
         <SupportWidget
           whatsappLink={config.whatsapp_link || ''}
           telegramLink={config.telegram_link || ''}
