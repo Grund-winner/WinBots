@@ -121,26 +121,16 @@ export async function seedDefaultConfigs(): Promise<void> {
     console.warn('Owner promotion failed:', e);
   }
 
-  // Auto-cleanup test accounts: remove users with test emails if OWNER_EMAIL is not set
-  // This cleans up accounts created during development/testing
+  // One-time auto-cleanup: removes ALL test users created during development
+  // This runs only once (tracked by 'test_cleanup_done' config)
   try {
-    const ownerEmail = process.env.OWNER_EMAIL?.toLowerCase().trim();
-    if (!ownerEmail) {
-      const testUsers = await db.user.findMany({
-        where: {
-          OR: [
-            { email: { contains: 'test' } },
-            { email: { contains: 'example.com' } },
-            { username: { contains: 'test' } },
-          ],
-        },
-      });
-      for (const testUser of testUsers) {
-        // Delete related records first, then the user
+    const cleanupDone = await db.siteConfig.findUnique({ where: { key: 'test_cleanup_done' } });
+    if (!cleanupDone) {
+      const allUsers = await db.user.findMany();
+      for (const testUser of allUsers) {
         await db.botUnlock.deleteMany({ where: { userId: testUser.id } });
         await db.postbackEvent.deleteMany({ where: { userId: testUser.id } });
         await db.monthlyReward.deleteMany({ where: { userId: testUser.id } });
-        // Delete sessions for this user
         const sessions = await db.siteConfig.findMany({ where: { key: { startsWith: 'session_' } } });
         for (const session of sessions) {
           if (session.value === testUser.id) {
@@ -149,6 +139,14 @@ export async function seedDefaultConfigs(): Promise<void> {
         }
         await db.user.delete({ where: { id: testUser.id } });
         console.log(`Auto-cleaned test user: ${testUser.username} (${testUser.email})`);
+      }
+      await db.siteConfig.upsert({
+        where: { key: 'test_cleanup_done' },
+        update: { value: 'true' },
+        create: { key: 'test_cleanup_done', value: 'true' },
+      });
+      if (allUsers.length > 0) {
+        console.log(`One-time cleanup: removed ${allUsers.length} test user(s).`);
       }
     }
   } catch (e) {
