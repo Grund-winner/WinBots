@@ -8,6 +8,8 @@ import SupportWidget from '@/components/support-widget';
 import LandingPage from '@/components/pages/landing';
 import LoginPage from '@/components/pages/login';
 import RegisterPage from '@/components/pages/register';
+import ForgotPasswordPage from '@/components/pages/forgot-password';
+import ResetPasswordPage from '@/components/pages/reset-password';
 import DashboardPage from '@/components/pages/dashboard';
 import LeaderboardPage from '@/components/pages/leaderboard';
 import AdminPage from '@/components/pages/admin';
@@ -19,17 +21,27 @@ export default function AppRouter() {
   const { config } = useSiteConfig();
 
   // Handle referral code from URL on landing page
+  // Handle reset-password token from email link
+  const hasNavigatedRef = React.useRef(false);
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !hasNavigatedRef.current) {
       const params = new URLSearchParams(window.location.search);
+      const resetToken = params.get('token');
       const ref = params.get('ref');
+
+      if (resetToken && window.location.pathname === '/reset-password') {
+        hasNavigatedRef.current = true;
+        navigate('reset-password');
+        return;
+      }
+
       if (ref) {
+        hasNavigatedRef.current = true;
         sessionStorage.setItem('referralCode', ref.toUpperCase());
-        // Clean URL
         window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, []);
+  }, [navigate]);
 
   // Loading screen
   if (loading) {
@@ -68,6 +80,10 @@ function PageContent({ currentPage, navigate }: { currentPage: string; navigate:
       return <LoginPage />;
     case 'register':
       return <RegisterPage />;
+    case 'forgot-password':
+      return <ForgotPasswordPage />;
+    case 'reset-password':
+      return <ResetPasswordPage />;
     case 'dashboard':
     case 'bots':
     case 'referrals':

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Page = 'landing' | 'login' | 'register' | 'dashboard' | 'bots' | 'referrals' | 'leaderboard' | 'admin';
+export type Page = 'landing' | 'login' | 'register' | 'forgot-password' | 'reset-password' | 'dashboard' | 'bots' | 'referrals' | 'leaderboard' | 'admin';
 
 interface RouterContextType {
   currentPage: Page;

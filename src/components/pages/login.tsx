@@ -60,7 +60,12 @@ export default function LoginPage() {
                 <Input id="email" type="email" placeholder="votre@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="rounded-xl h-12 border-slate-200 focus:border-sky-500 text-base" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-700 font-medium text-sm">Mot de passe</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-slate-700 font-medium text-sm">Mot de passe</Label>
+                  <Button type="button" variant="link" onClick={() => navigate('forgot-password')} className="text-sky-600 font-medium text-xs p-0 h-auto">
+                    Mot de passe oublie ?
+                  </Button>
+                </div>
                 <Input id="password" type="password" placeholder="Votre mot de passe" value={password} onChange={e => setPassword(e.target.value)} required className="rounded-xl h-12 border-slate-200 focus:border-sky-500 text-base" />
               </div>
               <Button type="submit" disabled={loading} className="w-full rounded-xl h-12 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold shadow-lg shadow-sky-500/25 text-base">
