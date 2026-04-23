@@ -83,6 +83,7 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copiedPromo, setCopiedPromo] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'bots' | 'invite'>('overview');
+  const [lockedBotModal, setLockedBotModal] = useState<GameData | null>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -338,6 +339,7 @@ export default function DashboardPage() {
                         transition={{ duration: 0.15, delay: index * 0.02 }}
                         whileTap={{ scale: 0.97 }}
                         className="group"
+                        onClick={() => { if (!isUnlocked) setLockedBotModal(game); }}
                       >
                         <div
                           className={`relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 ${!isUnlocked ? 'opacity-50' : ''}`}
@@ -442,6 +444,117 @@ export default function DashboardPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Locked Bot Modal */}
+      <AnimatePresence>
+        {lockedBotModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={() => setLockedBotModal(null)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full sm:w-[380px] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-5 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden">
+                    <img src={lockedBotModal.image} alt="" className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 text-sm">{lockedBotModal.name}</h3>
+                    <p className="text-xs text-slate-400">Bot de prediction</p>
+                  </div>
+                </div>
+                <button onClick={() => setLockedBotModal(null)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-500"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              {/* Lock icon */}
+              <div className="px-5 pb-3 flex justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-slate-400">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+              </div>
+              {/* Content */}
+              <div className="px-5 pb-5">
+                <div className="text-center mb-4">
+                  <p className="text-sm font-medium text-slate-700 mb-1">Ce bot est actuellement verrouille</p>
+                  <p className="text-xs text-slate-400">Completez la condition suivante pour le debloquer</p>
+                </div>
+                {/* Requirement card */}
+                <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center shrink-0 mt-0.5">
+                      {lockedBotModal.unlockType === 'deposit' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-sky-600"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-sky-600"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {lockedBotModal.unlockType === 'deposit'
+                          ? `Effectuez un depot minimum de ${lockedBotModal.unlockValue}$`
+                          : `Parrainez ${lockedBotModal.unlockValue} personne${lockedBotModal.unlockValue > 1 ? 's' : ''} verifiee${lockedBotModal.unlockValue > 1 ? 's' : ''}`
+                        }
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {lockedBotModal.unlockType === 'deposit'
+                          ? `Depot actuel : ${user.totalDeposits.toFixed(2)}$ sur ${lockedBotModal.unlockValue}$ requis`
+                          : `Filleuls verifies : ${user.verifiedRefCount} sur ${lockedBotModal.unlockValue} requis`
+                        }
+                      </p>
+                      {/* Progress bar */}
+                      <div className="mt-2.5 h-1.5 rounded-full bg-sky-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-sky-500 to-blue-500 transition-all duration-500"
+                          style={{
+                            width: `${Math.min(100, lockedBotModal.unlockType === 'deposit'
+                              ? (user.totalDeposits / lockedBotModal.unlockValue) * 100
+                              : (user.verifiedRefCount / lockedBotModal.unlockValue) * 100
+                            )}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Action button */}
+                {lockedBotModal.unlockType === 'deposit' && (
+                  <Button
+                    onClick={() => { setLockedBotModal(null); window.open(personal1WinLink, '_blank'); }}
+                    className="w-full mt-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-medium text-sm h-11"
+                  >
+                    Effectuer un depot sur 1win
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-1"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  </Button>
+                )}
+                {lockedBotModal.unlockType === 'referral' && (
+                  <Button
+                    onClick={() => { setLockedBotModal(null); setActiveTab('invite'); }}
+                    className="w-full mt-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-medium text-sm h-11"
+                  >
+                    Inviter des amis
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 ml-1"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -48,6 +48,25 @@ export async function GET() {
       where: { userId_month: { userId: user.id, month: currentMonth } },
     });
 
+    // Count ACTUALLY unlocked bots based on current game conditions
+    const games = await db.game.findMany({ where: { isActive: true } });
+    const unlockedBotIds = new Set(fullUser.botUnlocks.map(b => b.botId));
+    let botsUnlocked = 0;
+    for (const game of games) {
+      if (!unlockedBotIds.has(game.slug)) continue;
+      switch (game.unlockType) {
+        case 'free':
+          botsUnlocked++;
+          break;
+        case 'deposit':
+          if (fullUser.totalDeposits >= game.unlockValue) botsUnlocked++;
+          break;
+        case 'referral':
+          if (fullUser.verifiedRefCount >= game.unlockValue) botsUnlocked++;
+          break;
+      }
+    }
+
     return NextResponse.json({
       user: {
         id: fullUser.id,
@@ -65,7 +84,7 @@ export async function GET() {
         verifiedReferrals,
         totalEvents,
         totalDeposits: deposits,
-        botsUnlocked: fullUser.botUnlocks.length,
+        botsUnlocked,
         monthlyRank: monthlyReward?.rank || null,
         monthlyReward: monthlyReward?.amount || 0,
       },

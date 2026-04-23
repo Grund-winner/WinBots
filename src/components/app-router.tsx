@@ -3,6 +3,8 @@
 import React from 'react';
 import { useRouter } from '@/components/router';
 import { useAuth } from '@/components/auth-provider';
+import { useSiteConfig } from '@/components/config-provider';
+import SupportWidget from '@/components/support-widget';
 import LandingPage from '@/components/pages/landing';
 import LoginPage from '@/components/pages/login';
 import RegisterPage from '@/components/pages/register';
@@ -14,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AppRouter() {
   const { currentPage, navigate } = useRouter();
   const { user, loading } = useAuth();
+  const { config } = useSiteConfig();
 
   // Handle referral code from URL on landing page
   React.useEffect(() => {
@@ -46,6 +49,18 @@ export default function AppRouter() {
     return null;
   }
 
+  return (
+    <>
+      <PageContent currentPage={currentPage} navigate={navigate} />
+      <SupportWidget
+        whatsappLink={config.whatsapp_link || ''}
+        telegramLink={config.telegram_link || ''}
+      />
+    </>
+  );
+}
+
+function PageContent({ currentPage, navigate }: { currentPage: string; navigate: (page: any) => void }) {
   switch (currentPage) {
     case 'landing':
       return <LandingPage />;
