@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { useAuth } from '@/components/auth-provider';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,20 +18,29 @@ interface ChatMessage {
   content: string;
 }
 
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
+}
+
 // ─── Icons (inline SVGs) ─────────────────────────────────────────────────────
 
 function ChatBubbleIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
+  );
+}
+
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
   );
 }
@@ -53,15 +63,7 @@ function TelegramIcon({ className }: { className?: string }) {
 
 function SendIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <line x1="22" y1="2" x2="11" y2="13" />
       <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
@@ -70,17 +72,28 @@ function SendIcon({ className }: { className?: string }) {
 
 function CloseIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function MailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  );
+}
+
+function ImageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
     </svg>
   );
 }
@@ -92,21 +105,9 @@ function TypingIndicator() {
     <div className="flex items-end gap-2">
       <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-4 py-3">
         <div className="flex items-center gap-1">
-          <motion.span
-            className="w-2 h-2 bg-slate-400 rounded-full inline-block"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-          />
-          <motion.span
-            className="w-2 h-2 bg-slate-400 rounded-full inline-block"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
-          />
-          <motion.span
-            className="w-2 h-2 bg-slate-400 rounded-full inline-block"
-            animate={{ y: [0, -4, 0] }}
-            transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
-          />
+          <motion.span className="w-2 h-2 bg-slate-400 rounded-full inline-block" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+          <motion.span className="w-2 h-2 bg-slate-400 rounded-full inline-block" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />
+          <motion.span className="w-2 h-2 bg-slate-400 rounded-full inline-block" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} />
         </div>
       </div>
     </div>
@@ -123,37 +124,39 @@ function getInitialPosition(): { x: number; y: number } {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
-        return parsed;
-      }
+      if (typeof parsed.x === 'number' && typeof parsed.y === 'number') return parsed;
     }
   } catch {}
-  // Default: bottom-right corner
-  return {
-    x: window.innerWidth - 72,
-    y: window.innerHeight - 120,
-  };
+  return { x: window.innerWidth - 72, y: window.innerHeight - 120 };
 }
 
 function savePosition(pos: { x: number; y: number }) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
-  } catch {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pos)); } catch {}
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function SupportWidget({
-  whatsappLink,
-  telegramLink,
-}: SupportWidgetProps) {
+export default function SupportWidget({ whatsappLink, telegramLink }: SupportWidgetProps) {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Draggable state - initialize from localStorage
+  // Notifications
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+  // Suggestions
+  const [suggestPanelOpen, setSuggestPanelOpen] = useState(false);
+  const [suggestMessage, setSuggestMessage] = useState('');
+  const [suggestScreenshot, setSuggestScreenshot] = useState<string | null>(null);
+  const [submittingSuggestion, setSubmittingSuggestion] = useState(false);
+
+  // Draggable state
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, pos_x: 0, pos_y: 0 });
@@ -161,14 +164,15 @@ export default function SupportWidget({
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ─── Initialize position on mount ──────────────────────────────────────
+  // ─── Initialize position ─────────────────────────────────────────────
 
   useEffect(() => {
     setPosition(getInitialPosition());
   }, []);
 
-  // ─── Save position to localStorage when it changes (after drag end) ──
+  // ─── Save position after drag ─────────────────────────────────────────
 
   const savePositionRef = useRef(false);
   useEffect(() => {
@@ -178,259 +182,298 @@ export default function SupportWidget({
     }
   }, [position]);
 
-  // ─── Scroll to bottom on new message ────────────────────────────────────
+  // ─── Poll for unread notification count (every 30s) ──────────────────
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/notifications?count=true');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch {}
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // ─── Chat scroll + focus ──────────────────────────────────────────────
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // ─── Focus input when chat opens ────────────────────────────────────────
-
   useEffect(() => {
-    if (chatOpen) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    if (chatOpen) setTimeout(() => inputRef.current?.focus(), 300);
   }, [chatOpen]);
 
-  // ─── Drag handling ──────────────────────────────────────────────────────
+  // ─── Drag handling ─────────────────────────────────────────────────────
 
-  const handleDragStart = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!position) return;
-      setIsDragging(true);
-      hasDragged.current = false;
-      dragStart.current = {
-        x: clientX,
-        y: clientY,
-        pos_x: position.x,
-        pos_y: position.y,
-      };
-    },
-    [position]
-  );
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    if (!position) return;
+    setIsDragging(true);
+    hasDragged.current = false;
+    dragStart.current = { x: clientX, y: clientY, pos_x: position.x, pos_y: position.y };
+  }, [position]);
 
-  const handleDragMove = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!isDragging || !position) return;
-      const dx = clientX - dragStart.current.x;
-      const dy = clientY - dragStart.current.y;
-
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-        hasDragged.current = true;
-      }
-
-      const btnSize = 60;
-      const padding = 8;
-      const newX = Math.max(
-        padding,
-        Math.min(window.innerWidth - btnSize - padding, dragStart.current.pos_x + dx)
-      );
-      const newY = Math.max(
-        padding,
-        Math.min(window.innerHeight - btnSize - padding, dragStart.current.pos_y + dy)
-      );
-
-      setPosition({ x: newX, y: newY });
-    },
-    [isDragging, position]
-  );
+  const handleDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging || !position) return;
+    const dx = clientX - dragStart.current.x;
+    const dy = clientY - dragStart.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
+    const btnSize = 60;
+    const padding = 8;
+    setPosition({
+      x: Math.max(padding, Math.min(window.innerWidth - btnSize - padding, dragStart.current.pos_x + dx)),
+      y: Math.max(padding, Math.min(window.innerHeight - btnSize - padding, dragStart.current.pos_y + dy)),
+    });
+  }, [isDragging, position]);
 
   const handleDragEnd = useCallback(() => {
     if (!isDragging || !position) return;
     setIsDragging(false);
-
-    // Stay where dropped - just save the position
     savePositionRef.current = true;
     savePosition(position);
   }, [isDragging, position]);
 
-  // ─── Mouse events ───────────────────────────────────────────────────────
+  // ─── Mouse / Touch events ─────────────────────────────────────────────
 
-  const onMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      handleDragStart(e.clientX, e.clientY);
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+    const onMove = (ev: MouseEvent) => handleDragMove(ev.clientX, ev.clientY);
+    const onUp = () => { handleDragEnd(); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [handleDragStart, handleDragMove, handleDragEnd]);
 
-      const onMouseMove = (ev: MouseEvent) => handleDragMove(ev.clientX, ev.clientY);
-      const onMouseUp = () => {
-        handleDragEnd();
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-      };
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+    const onMove = (ev: TouchEvent) => { ev.preventDefault(); handleDragMove(ev.touches[0].clientX, ev.touches[0].clientY); };
+    const onUp = () => { handleDragEnd(); window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp); };
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+  }, [handleDragStart, handleDragMove, handleDragEnd]);
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    },
-    [handleDragStart, handleDragMove, handleDragEnd]
-  );
-
-  // ─── Touch events ───────────────────────────────────────────────────────
-
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
-
-      const onTouchMove = (ev: TouchEvent) => {
-        ev.preventDefault();
-        handleDragMove(ev.touches[0].clientX, ev.touches[0].clientY);
-      };
-      const onTouchEnd = () => {
-        handleDragEnd();
-        window.removeEventListener('touchmove', onTouchMove);
-        window.removeEventListener('touchend', onTouchEnd);
-      };
-
-      window.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('touchend', onTouchEnd);
-    },
-    [handleDragStart, handleDragMove, handleDragEnd]
-  );
-
-  // ─── Toggle expanded buttons ────────────────────────────────────────────
+  // ─── Toggle menu ──────────────────────────────────────────────────────
 
   const handleMainButtonClick = useCallback(() => {
-    if (hasDragged.current) {
-      hasDragged.current = false;
-      return;
-    }
+    if (hasDragged.current) { hasDragged.current = false; return; }
     setExpanded((prev) => !prev);
   }, []);
 
-  // ─── Open chat ──────────────────────────────────────────────────────────
+  // ─── Open chat ────────────────────────────────────────────────────────
 
   const openChat = useCallback(() => {
     setExpanded(false);
     setChatOpen(true);
   }, []);
 
-  // ─── Send message ───────────────────────────────────────────────────────
+  // ─── Notifications ────────────────────────────────────────────────────
+
+  const openNotifications = useCallback(async () => {
+    setExpanded(false);
+    setNotifPanelOpen(true);
+    setLoadingNotifs(true);
+    try {
+      const res = await fetch('/api/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+        // Mark unread as read
+        const unreadIds = (data.notifications || []).filter((n: Notification) => !n.read).map((n: Notification) => n.id);
+        if (unreadIds.length > 0) {
+          await fetch('/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationIds: unreadIds }),
+          });
+          setUnreadCount(0);
+        }
+      }
+    } catch {}
+    setLoadingNotifs(false);
+  }, []);
+
+  // ─── Suggestions ──────────────────────────────────────────────────────
+
+  const openSuggestions = useCallback(() => {
+    setExpanded(false);
+    setSuggestPanelOpen(true);
+  }, []);
+
+  const handleScreenshotUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("L'image ne doit pas depasser 2 Mo");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setSuggestScreenshot(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const submitSuggestion = useCallback(async () => {
+    if (!suggestMessage.trim() || submittingSuggestion) return;
+    setSubmittingSuggestion(true);
+    try {
+      const res = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: suggestMessage.trim(),
+          screenshot: suggestScreenshot,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Suggestion envoyee avec succes !');
+        setSuggestMessage('');
+        setSuggestScreenshot(null);
+        setSuggestPanelOpen(false);
+      } else {
+        toast.error(data.error || 'Erreur lors de l\'envoi');
+      }
+    } catch {
+      toast.error('Erreur de connexion');
+    }
+    setSubmittingSuggestion(false);
+  }, [suggestMessage, suggestScreenshot, submittingSuggestion]);
+
+  // ─── Chat send message ────────────────────────────────────────────────
 
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || isLoading) return;
-
     const userMessage: ChatMessage = { role: 'user', content: text };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
-
     try {
       const res = await fetch('/api/support/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       });
-
       const data = await res.json();
-
-      if (data.error) {
-        toast.error(data.error);
-        setIsLoading(false);
-        return;
-      }
-
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: data.reply,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      toast.error('Erreur de connexion. Veuillez reessayer.');
-    } finally {
-      setIsLoading(false);
-    }
+      if (data.error) { toast.error(data.error); setIsLoading(false); return; }
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+    } catch { toast.error('Erreur de connexion.'); }
+    finally { setIsLoading(false); }
   }, [input, messages, isLoading]);
 
-  // ─── Handle keyboard ────────────────────────────────────────────────────
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }, [sendMessage]);
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    },
-    [sendMessage]
-  );
+  // ─── Format date ──────────────────────────────────────────────────────
 
-  // ─── Circular arrangement config ────────────────────────────────────────
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "A l'instant";
+    if (diffMin < 60) return `Il y a ${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `Il y a ${diffH}h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `Il y a ${diffD}j`;
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+
+  // ─── Action buttons config (5 buttons in semicircle) ──────────────────
 
   const actionButtons = [
     {
+      label: 'Notifications',
+      icon: <BellIcon className="w-6 h-6 text-white" />,
+      color: 'bg-amber-500 hover:bg-amber-600',
+      onClick: openNotifications,
+      badge: unreadCount,
+    },
+    {
       label: 'Support IA',
-      icon: <ChatBubbleIcon className="w-7 h-7 text-white" />,
+      icon: <ChatBubbleIcon className="w-6 h-6 text-white" />,
       color: 'bg-blue-600 hover:bg-blue-700',
       onClick: openChat,
     },
     {
       label: 'WhatsApp',
-      icon: <WhatsAppIcon className="w-8 h-8 text-white" />,
+      icon: <WhatsAppIcon className="w-7 h-7 text-white" />,
       color: 'bg-green-500 hover:bg-green-600',
       onClick: () => window.open(whatsappLink, '_blank', 'noopener'),
     },
     {
       label: 'Telegram',
-      icon: <TelegramIcon className="w-7 h-7 text-white" />,
+      icon: <TelegramIcon className="w-6 h-6 text-white" />,
       color: 'bg-sky-500 hover:bg-sky-600',
       onClick: () => window.open(telegramLink, '_blank', 'noopener'),
     },
+    {
+      label: 'Suggestion',
+      icon: <MailIcon className="w-6 h-6 text-white" />,
+      color: 'bg-purple-500 hover:bg-purple-600',
+      onClick: openSuggestions,
+    },
   ];
 
-  // Circular positions: 3 buttons spread around the top of the main button
-  const radius = 72; // distance from center of main button
+  // 5 buttons in a semicircle: from -150deg to -30deg
+  const radius = 78;
   const mainBtnSize = 60;
-  const subBtnSize = 50;
-  const angles = [
-    -Math.PI / 2,           // top center (Support IA)
-    -Math.PI / 2 - Math.PI / 3, // top-left (WhatsApp)
-    -Math.PI / 2 + Math.PI / 3, // top-right (Telegram)
-  ];
+  const subBtnSize = 46;
 
-  // Don't render until position is initialized
   if (!position) return null;
 
   return (
     <>
       {/* ── Floating button + action buttons ── */}
       <div className="fixed z-50 pointer-events-none" style={{ left: position.x, top: position.y }}>
-        {/* Action buttons - circular arrangement */}
         <AnimatePresence>
           {expanded && (
             <>
               {actionButtons.map((btn, i) => {
-                const angle = angles[i];
-                // Position relative to the center of the main button
+                const totalButtons = actionButtons.length;
+                const startAngle = -Math.PI * 5 / 6; // -150deg
+                const endAngle = -Math.PI / 6;       // -30deg
+                const step = totalButtons > 1 ? (endAngle - startAngle) / (totalButtons - 1) : 0;
+                const angle = startAngle + step * i;
+
                 const offsetX = Math.cos(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
                 const offsetY = Math.sin(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
+
                 return (
                   <motion.button
                     key={btn.label}
-                    className={`
-                      group pointer-events-auto absolute flex items-center justify-center
-                      rounded-full shadow-lg transition-colors duration-200
-                      ${btn.color}
-                    `}
-                    style={{
-                      width: subBtnSize,
-                      height: subBtnSize,
-                      left: offsetX,
-                      top: offsetY,
-                    }}
+                    className={`group pointer-events-auto absolute flex items-center justify-center rounded-full shadow-lg transition-colors duration-200 ${btn.color}`}
+                    style={{ width: subBtnSize, height: subBtnSize, left: offsetX, top: offsetY }}
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0 }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 400,
-                      damping: 25,
-                      delay: i * 0.05,
-                    }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25, delay: i * 0.04 }}
                     onClick={btn.onClick}
                     title={btn.label}
                     aria-label={btn.label}
                   >
                     {btn.icon}
+                    {/* Unread badge */}
+                    {btn.badge !== undefined && btn.badge > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white">
+                        {btn.badge > 9 ? '9+' : btn.badge}
+                      </span>
+                    )}
                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-medium text-slate-700 bg-white px-2 py-1 rounded-lg shadow hidden group-hover:block">
                       {btn.label}
                     </span>
@@ -443,11 +486,7 @@ export default function SupportWidget({
 
         {/* Main FAB */}
         <motion.button
-          className={`
-            pointer-events-auto flex items-center justify-center rounded-full shadow-xl
-            transition-colors duration-200 select-none overflow-hidden
-            ${expanded ? 'bg-slate-800' : 'bg-gradient-to-br from-blue-600 to-blue-700'}
-          `}
+          className={`pointer-events-auto flex items-center justify-center rounded-full shadow-xl transition-colors duration-200 select-none overflow-hidden relative ${expanded ? 'bg-slate-800' : 'bg-gradient-to-br from-blue-600 to-blue-700'}`}
           style={{ width: mainBtnSize, height: mainBtnSize }}
           whileTap={{ scale: 0.92 }}
           onMouseDown={onMouseDown}
@@ -455,40 +494,190 @@ export default function SupportWidget({
           onClick={handleMainButtonClick}
           aria-label={expanded ? 'Fermer le menu' : 'Ouvrir le support'}
         >
-          <motion.div
-            animate={{ rotate: expanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          {/* Unread count badge on main button */}
+          {!expanded && unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white z-10">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
             {expanded ? (
               <CloseIcon className="w-6 h-6 text-white" />
             ) : (
-              <Image
-                src="/logo.png"
-                alt="WinBots Support"
-                width={36}
-                height={36}
-                className="rounded-full object-cover"
-                draggable={false}
-              />
+              <Image src="/logo.png" alt="WinBots Support" width={36} height={36} className="rounded-full object-cover" draggable={false} />
             )}
           </motion.div>
         </motion.button>
       </div>
 
+      {/* ── Notifications Panel ── */}
+      <AnimatePresence>
+        {notifPanelOpen && (
+          <>
+            <motion.div className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setNotifPanelOpen(false)} />
+            <motion.div
+              className="fixed inset-x-0 bottom-0 z-[70] mx-auto flex flex-col bg-white rounded-t-3xl shadow-2xl max-w-lg"
+              style={{ maxHeight: '80vh' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500">
+                    <BellIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Notifications</h3>
+                    <p className="text-xs text-slate-500">Messages de l&apos;equipe WinBots</p>
+                  </div>
+                </div>
+                <button onClick={() => setNotifPanelOpen(false)} className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 transition-colors" aria-label="Fermer">
+                  <CloseIcon className="w-4 h-4 text-slate-500" />
+                </button>
+              </div>
+
+              {/* Notifications list */}
+              <div className="flex-1 overflow-y-auto">
+                {loadingNotifs ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-6">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+                      <BellIcon className="w-6 h-6 text-slate-300" />
+                    </div>
+                    <p className="text-sm text-slate-400">Aucune notification</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-50">
+                    {notifications.map((notif) => (
+                      <div key={notif.id} className={`px-5 py-4 ${!notif.read ? 'bg-blue-50/50' : ''}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              {!notif.read && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                              <h4 className="text-sm font-semibold text-slate-900 truncate">{notif.title}</h4>
+                            </div>
+                            <p className="text-sm text-slate-600 leading-relaxed">{notif.message}</p>
+                            <p className="text-xs text-slate-400 mt-2">{formatDate(notif.createdAt)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Suggestion Panel ── */}
+      <AnimatePresence>
+        {suggestPanelOpen && (
+          <>
+            <motion.div className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSuggestPanelOpen(false)} />
+            <motion.div
+              className="fixed inset-x-0 bottom-0 z-[70] mx-auto flex flex-col bg-white rounded-t-3xl shadow-2xl max-w-lg"
+              style={{ maxHeight: '85vh' }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-500">
+                    <MailIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Suggestion</h3>
+                    <p className="text-xs text-slate-500">Partagez vos idees avec nous</p>
+                  </div>
+                </div>
+                <button onClick={() => setSuggestPanelOpen(false)} className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 transition-colors" aria-label="Fermer">
+                  <CloseIcon className="w-4 h-4 text-slate-500" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">Votre message</p>
+                  <textarea
+                    value={suggestMessage}
+                    onChange={(e) => setSuggestMessage(e.target.value)}
+                    placeholder="Decrivez votre suggestion... (ameliorer un jeu, ajouter une fonctionnalite, etc.)"
+                    className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-32 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                    maxLength={3000}
+                  />
+                  <p className="text-right text-xs text-slate-400">{suggestMessage.length}/3000</p>
+                </div>
+
+                {/* Screenshot upload */}
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">Capture d&apos;ecran (optionnel)</p>
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleScreenshotUpload} className="hidden" />
+                  {suggestScreenshot ? (
+                    <div className="relative inline-block">
+                      <img src={suggestScreenshot} alt="Capture" className="max-w-full max-h-48 rounded-xl object-cover border border-slate-200" />
+                      <button
+                        onClick={() => setSuggestScreenshot(null)}
+                        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                        aria-label="Supprimer"
+                      >
+                        <CloseIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-500 hover:border-purple-300 hover:text-purple-600 hover:bg-purple-50/50 transition-all"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      Ajouter une image
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit */}
+              <div className="border-t border-slate-100 px-5 py-3 flex items-center gap-2 bg-white">
+                <div className="flex-1" />
+                <button
+                  onClick={() => setSuggestPanelOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={submitSuggestion}
+                  disabled={!suggestMessage.trim() || submittingSuggestion}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 disabled:hover:bg-purple-600 transition-colors"
+                >
+                  {submittingSuggestion ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <SendIcon className="w-4 h-4" />
+                  )}
+                  Envoyer
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* ── Chat Panel ── */}
       <AnimatePresence>
         {chatOpen && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setChatOpen(false)}
-            />
-
-            {/* Chat panel */}
+            <motion.div className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setChatOpen(false)} />
             <motion.div
               className="fixed inset-x-0 bottom-0 z-[70] mx-auto flex flex-col bg-white rounded-t-3xl shadow-2xl max-w-lg"
               style={{ maxHeight: '85vh', minHeight: '50vh' }}
@@ -501,100 +690,48 @@ export default function SupportWidget({
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700">
-                    <Image
-                      src="/logo.png"
-                      alt="WinBots"
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover"
-                      draggable={false}
-                    />
+                    <Image src="/logo.png" alt="WinBots" width={28} height={28} className="rounded-full object-cover" draggable={false} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      Support WinBots
-                    </h3>
+                    <h3 className="text-sm font-semibold text-slate-900">Support WinBots</h3>
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-green-500" />
                       <p className="text-xs text-slate-500">En ligne</p>
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 transition-colors"
-                  aria-label="Fermer"
-                >
+                <button onClick={() => setChatOpen(false)} className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 transition-colors" aria-label="Fermer">
                   <CloseIcon className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
 
-              {/* Messages area */}
+              {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                {/* Welcome message */}
                 {messages.length === 0 && (
                   <div className="flex justify-center py-8">
                     <div className="text-center max-w-[260px]">
                       <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-blue-50 mx-auto mb-3">
-                        <Image
-                          src="/logo.png"
-                          alt="WinBots"
-                          width={36}
-                          height={36}
-                          className="rounded-full object-cover"
-                          draggable={false}
-                        />
+                        <Image src="/logo.png" alt="WinBots" width={36} height={36} className="rounded-full object-cover" draggable={false} />
                       </div>
-                      <p className="text-sm text-slate-600 leading-relaxed">
-                        Bonjour ! Comment puis-je vous aider aujourd&apos;hui ?
-                      </p>
+                      <p className="text-sm text-slate-600 leading-relaxed">Bonjour ! Comment puis-je vous aider aujourd&apos;hui ?</p>
                     </div>
                   </div>
                 )}
-
                 {messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`
-                        max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
-                        ${
-                          msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-sm'
-                            : 'bg-slate-100 text-slate-800 rounded-bl-sm'
-                        }
-                      `}
-                    >
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-100 text-slate-800 rounded-bl-sm'}`}>
                       {msg.content}
                     </div>
                   </div>
                 ))}
-
                 {isLoading && <TypingIndicator />}
-
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Input area */}
+              {/* Input */}
               <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-2 bg-white">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Votre message..."
-                  disabled={isLoading}
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all disabled:opacity-50"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-colors shrink-0"
-                  aria-label="Envoyer"
-                >
+                <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Votre message..." disabled={isLoading} className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all disabled:opacity-50" />
+                <button onClick={sendMessage} disabled={isLoading || !input.trim()} className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-colors shrink-0" aria-label="Envoyer">
                   <SendIcon className="w-4 h-4 text-white" />
                 </button>
               </div>
