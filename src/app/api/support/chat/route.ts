@@ -1,70 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
 import { sanitizeString, truncate } from '@/lib/sanitize';
+import { getSiteConfig } from '@/lib/config';
 
 // ─── Groq API Key Management ────────────────────────────────────────────────
 
-// Keys that are temporarily marked as failed (e.g., rate limited) get a cooldown
-const failedKeys = new Map<string, number>(); // key -> timestamp when it can be retried
-const COOLDOWN_MS = 60_000; // 1 minute cooldown for failed keys
+const failedKeys = new Map<string, number>();
+const COOLDOWN_MS = 60_000;
 
 function getAvailableKeys(): string[] {
   const keys: string[] = [];
-
-  // Support multiple keys: GROQ_API_KEY_1, GROQ_API_KEY_2, ... GROQ_API_KEY_5
   for (let i = 1; i <= 5; i++) {
     const key = process.env[`GROQ_API_KEY_${i}`];
-    if (key && key.trim()) {
-      keys.push(key.trim());
-    }
+    if (key && key.trim()) keys.push(key.trim());
   }
-
-  // Fallback: single GROQ_API_KEY for backward compatibility
   if (keys.length === 0) {
     const singleKey = process.env.GROQ_API_KEY;
-    if (singleKey && singleKey.trim()) {
-      keys.push(singleKey.trim());
-    }
+    if (singleKey && singleKey.trim()) keys.push(singleKey.trim());
   }
-
   return keys;
 }
 
 function getWorkingKey(): string | null {
   const keys = getAvailableKeys();
   const now = Date.now();
-
-  // Find a key that isn't in cooldown
   const available = keys.filter((key) => {
     const failTime = failedKeys.get(key);
     if (!failTime) return true;
-    if (now > failTime) {
-      failedKeys.delete(key);
-      return true;
-    }
+    if (now > failTime) { failedKeys.delete(key); return true; }
     return false;
   });
-
   if (available.length === 0) {
-    // If all keys are in cooldown, pick the one that will be available soonest
     let soonestKey: string | null = null;
     let soonestTime = Infinity;
     for (const key of keys) {
       const failTime = failedKeys.get(key);
-      if (failTime && failTime < soonestTime) {
-        soonestTime = failTime;
-        soonestKey = key;
-      }
+      if (failTime && failTime < soonestTime) { soonestTime = failTime; soonestKey = key; }
     }
-    // If the soonest key is ready now, use it
-    if (soonestKey && now >= soonestTime) {
-      failedKeys.delete(soonestKey!);
-      return soonestKey;
-    }
+    if (soonestKey && now >= soonestTime) { failedKeys.delete(soonestKey!); return soonestKey; }
     return null;
   }
-
-  // Rotate: pick a random key from available ones for load distribution
   return available[Math.floor(Math.random() * available.length)];
 }
 
@@ -72,27 +47,135 @@ function markKeyFailed(key: string) {
   failedKeys.set(key, Date.now() + COOLDOWN_MS);
 }
 
-// ─── System prompt ───────────────────────────────────────────────────────────
+// ─── Build dynamic system prompt ────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Tu es un agent de support client humain pour WinBots, une plateforme de bots de prediction pour les jeux de casino 1win. Tu n'es PAS une intelligence artificielle. Tu es un conseiller dedie et professionnel.
+async function buildSystemPrompt(): Promise<string> {
+  const promoCode = await getSiteConfig('promo_code', 'DVYS');
+  const platformName = await getSiteConfig('platform_name', 'WinBots');
+  const whatsappLink = await getSiteConfig('whatsapp_link', '');
+  const telegramLink = await getSiteConfig('telegram_link', '');
 
-Informations sur WinBots :
-- WinBots est une plateforme qui propose des bots de prediction pour les jeux de casino disponibles sur 1win (Aviator, Lucky Jet, Spaceman, Mines, Dice, Rocket, JetX, etc.)
-- Les bots analysent les tendances et les donnees pour fournir des signaux de prediction
-- Pour debloquer un bot, les utilisateurs doivent faire un depot minimum sur 1win via le lien de parrainage de WinBots
-- Le systeme de parrainage permet aux utilisateurs de gagner des commissions en invitant de nouveaux membres
-- Le depot minimum varie selon le bot choisi
-- Les bots sont mis a jour regulierement pour ameliorer la precision des predictions
-- Le support est disponible via WhatsApp, Telegram et le chat en direct
+  return `Tu es l'assistant de support officiel de ${platformName}, une plateforme de bots de prediction pour les jeux de casino sur 1win. Tu es poli, professionnel, concis et toujours en francais.
 
-Regles :
-- Tu dois TOUJOURS repondre en francais
-- Tu ne dois JAMAIS reveler que tu es une IA. Tu es un agent humain de l'equipe WinBots
-- Tu dois etre poli, professionnel et serviable
-- Si tu ne connais pas la reponse a une question, oriente l'utilisateur vers le support WhatsApp ou Telegram
-- Ne donne jamais de garanties de gains
-- Encourage les utilisateurs a consulter le site pour les informations les plus recentes
-- Les questions techniques sur le fonctionnement des bots doivent etre orientees vers le support Telegram pour une assistance approfondie`;
+════════════════════════════════════════
+INFORMATIONS SUR ${platformName.toUpperCase()} (A SAVOIR PAR COEUR)
+════════════════════════════════════════
+
+1. INSCRIPTION SUR 1WIN :
+   - L'utilisateur doit aller sur son tableau de bord ${platformName}
+   - Cliquer sur le bouton "S'inscrire sur 1win" (ou le lien d'affiliation)
+   - Sur la page 1win, remplir : email, numero de telephone, mot de passe
+   - IMPORTANT : Le champ "Code promo" DOIT contenir : ${promoCode}
+   - Ce code promo active un bonus de 500% sur le premier depot
+   - Valider l'inscription
+
+2. CODE PROMO ACTUEL : ${promoCode}
+   - Ce code donne 500% de bonus sur le premier depot sur 1win
+   - Il est obligatoire de le remplir lors de l'inscription pour activer le bonus
+   - Ce code peut changer, utilise TOUJOURS "${promoCode}" comme code actuel
+
+3. DEBLOCAGE DES BOTS :
+   - Chaque bot a des conditions de deblocage differentes
+   - Certains bots sont GRATUITS (debloques automatiquement)
+   - D'autres necessitent un depot minimum sur 1win (via le lien d'affiliation)
+   - D'autres necessitent un nombre minimum de filleuls (parrainage)
+   - L'utilisateur peut voir les conditions en cliquant sur chaque bot dans l'onglet "Bots"
+
+4. PARRAINAGE :
+   - Chaque utilisateur a un lien de parrainage unique
+   - Il peut le partager pour recruter de nouveaux membres
+   - Les filleuls doivent s'inscrire sur 1win via ce lien
+   - Le nombre de filleuls verifies permet de debloquer des bots premium
+
+5. TABLEAU DE BORD :
+   - Onglet "Apercu" : statistiques personnelles, lien 1win, stats de parrainage
+   - Onglet "Bots" : liste des jeux avec conditions de deblocage
+   - Onglet "Parrainage" : lien de parrainage, liste des filleuls
+
+6. JEUX DISPONIBLES :
+   Aviator, Crash, Dice, Mines, JetX, Rocket, Aviam, Lucky Jet, Spaceman, Speed and Cash, Coin Run, Chicken, Chook Train, Balloon, Fox, Tower, Tropicana, Plinko, RocketX, Nmines
+
+7. MOT DE PASSE OUBLIE :
+   - Cliquer sur "Mot de passe oublie ?" sur la page de connexion
+   - Entrer l'email utilise lors de l'inscription
+   - Un email de reinitialisation sera envoye (verifier les spams)
+   - Le lien expire dans 1 heure
+
+════════════════════════════════════════
+REGLES STRICTES (A RESPECTER ABSOLUMENT)
+════════════════════════════════════════
+
+1. DOMAINE DE REPONSE :
+   - Tu ne reponds QU'aux questions concernant ${platformName} ou 1win
+   - Si on te demande quelque chose hors sujet (meteo, sport, cuisine, politique, actualite, etc.), tu reponds :
+     "Desole, je ne peux repondre qu'aux questions concernant ${platformName} ou 1win. Comment puis-je vous aider avec la plateforme ?"
+
+2. INTERDIT :
+   - Ne JAMAIS donner d'acces a un compte utilisateur
+   - Ne JAMAIS fournir de mots de passe ou informations sensibles
+   - Ne JAMAIS garantir des gains
+   - Ne JAMAIS dire que tu es une IA ou un robot
+   - Ne JAMAIS parler d'autres sujets que ${platformName} ou 1win
+   - Ne JAMAIS inventer des informations sur ${platformName}
+   - Ne JAMAIS donner de lien 1win direct (seul le lien du tableau de bord est valide)
+
+3. STYLE :
+   - Reponds en francais, de maniere claire et concise
+   - Sois amical mais professionnel
+   - Si tu n'es pas sur d'une reponse, oriente vers le support WhatsApp${whatsappLink ? ` (${whatsappLink})` : ''} ou Telegram${telegramLink ? ` (${telegramLink})` : ''}
+   - Encourage l'utilisateur a consulter son tableau de bord pour les infos les plus recentes
+
+4. QUESTIONS FREQUENTES (reponses types) :
+   - "Comment s'inscrire sur 1win ?" -> Diriger vers le tableau de bord, bouton inscription, rappeler le code promo ${promoCode}
+   - "Comment debloquer un bot ?" -> Cliquer sur le bot dans l'onglet Bots pour voir les conditions
+   - "Mon lien 1win ne marche pas" -> Utiliser le lien depuis le tableau de bord
+   - "J'ai oublie mon mot de passe" -> Cliquer sur "Mot de passe oublie" sur la page connexion
+   - "Comment parrainer" -> Aller dans l'onglet Parrainage, partager le lien unique`;
+}
+
+// ─── Web search for 1win questions ──────────────────────────────────────────
+
+async function searchWeb(query: string): Promise<string | null> {
+  try {
+    const ZAI = await import('z-ai-web-dev-sdk');
+    const mod = ZAI.default || ZAI;
+    const zai = await mod.create();
+
+    const searchResult = await zai.functions.invoke('web_search', {
+      query: `1win casino ${query}`,
+      num: 5,
+    });
+
+    if (searchResult && Array.isArray(searchResult) && searchResult.length > 0) {
+      const snippets = searchResult
+        .slice(0, 3)
+        .map((r: { snippet?: string; name?: string }) => `- ${r.snippet || ''}`)
+        .join('\n');
+      return snippets || null;
+    }
+    return null;
+  } catch (e) {
+    console.warn('Web search failed:', e);
+    return null;
+  }
+}
+
+// ─── Detect if question needs web search ────────────────────────────────────
+
+function needsWebSearch(message: string): boolean {
+  const keywords = [
+    'bonus', 'promotion', 'offre', 'promo', 'reduction', 'code',
+    'depot', 'retrait', 'paiement', 'recharge', 'methode',
+    'verification', 'verifier', 'document', 'kyc',
+    'application', 'app', 'telecharger', 'mobile', 'android', 'ios',
+    'probleme', 'bug', 'erreur', 'marche pas', 'fonctionne pas',
+    'mise a jour', 'nouveau', 'nouvelle fonction',
+    'conditions', 'regles', 'terms', 'conditions',
+    'limite', 'plafond', 'minim', 'maximum',
+  ];
+  const lower = message.toLowerCase();
+  return keywords.some(kw => lower.includes(kw));
+}
 
 // ─── POST handler ────────────────────────────────────────────────────────────
 
@@ -113,10 +196,7 @@ export async function POST(request: NextRequest) {
     const { messages } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json(
-        { error: 'Messages invalides.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Messages invalides.' }, { status: 400 });
     }
 
     // Validate and sanitize messages
@@ -133,34 +213,42 @@ export async function POST(request: NextRequest) {
       }));
 
     if (sanitizedMessages.length === 0) {
-      return NextResponse.json(
-        { error: 'Messages invalides.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Messages invalides.' }, { status: 400 });
+    }
+
+    // Build system prompt with dynamic data
+    const systemPrompt = await buildSystemPrompt();
+
+    // Check if the latest user message needs web search for 1win info
+    const lastUserMsg = sanitizedMessages.filter((m: { role: string }) => m.role === 'user').pop();
+    let webContext = '';
+    if (lastUserMsg && needsWebSearch(lastUserMsg.content)) {
+      const searchResults = await searchWeb(lastUserMsg.content);
+      if (searchResults) {
+        webContext = `\n\n[INFORMATIONS SUPPLEMENTAIRES ISSUES D'UNE RECHERCHE WEB SUR 1WIN]:\n${searchResults}\n[UTILISE CES INFORMATIONS POUR COMPLETER TA REPONSE SI RELEVANT]`;
+      }
     }
 
     // Build the messages array for Groq
     const apiMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt + webContext },
       ...sanitizedMessages.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,
       })),
     ];
 
-    // Get a working API key (with failover)
+    // Get a working API key
     const apiKey = getWorkingKey();
 
     if (!apiKey) {
-      // All keys are in cooldown - return a graceful fallback
       const fallbackReplies = [
         'Merci pour votre message ! Notre equipe est actuellement tres sollicitee. Veuillez reessayer dans quelques instants ou contactez-nous sur WhatsApp ou Telegram pour une reponse plus rapide.',
         'Bonjour ! Nous recevons beaucoup de messages en ce moment. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
-        'Merci de nous avoir contactes. Notre systeme est temporairement surcharge. Veuillez reessayer dans un instant ou utiliser le support WhatsApp ou Telegram.',
       ];
-      const randomReply =
-        fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-      return NextResponse.json({ reply: randomReply });
+      return NextResponse.json({
+        reply: fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)],
+      });
     }
 
     // Try calling Groq API with failover
@@ -170,7 +258,7 @@ export async function POST(request: NextRequest) {
     for (const key of allKeys) {
       const failTime = failedKeys.get(key);
       const now = Date.now();
-      if (failTime && now < failTime) continue; // Skip keys in cooldown
+      if (failTime && now < failTime) continue;
 
       try {
         const response = await fetch(
@@ -185,17 +273,16 @@ export async function POST(request: NextRequest) {
               model: 'llama-3.3-70b-versatile',
               messages: apiMessages,
               max_tokens: 1024,
-              temperature: 0.7,
+              temperature: 0.5,
               top_p: 0.9,
             }),
-            signal: AbortSignal.timeout(15000), // 15s timeout per key
+            signal: AbortSignal.timeout(15000),
           }
         );
 
         if (response.status === 429) {
-          // Rate limited - mark this key as failed and try next
           markKeyFailed(key);
-          lastError = `Key rate limited (429)`;
+          lastError = 'Key rate limited (429)';
           continue;
         }
 
@@ -203,10 +290,7 @@ export async function POST(request: NextRequest) {
           const errorData = await response.json().catch(() => null);
           console.error('Groq API error:', response.status, errorData);
           lastError = `API error ${response.status}`;
-          // Don't mark non-429 errors as key failures - they might be request-specific
-          if (response.status >= 500) {
-            markKeyFailed(key);
-          }
+          if (response.status >= 500) markKeyFailed(key);
           continue;
         }
 
@@ -227,7 +311,6 @@ export async function POST(request: NextRequest) {
         }
         console.error('Groq fetch error:', fetchError);
         lastError = fetchError?.message || 'Unknown error';
-        // Network errors - try next key
         continue;
       }
     }
@@ -235,13 +318,12 @@ export async function POST(request: NextRequest) {
     // All keys failed
     console.error('All Groq keys failed. Last error:', lastError);
     const fallbackReplies = [
-      'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram pour une reponse plus rapide.',
-      'Bonjour ! Je suis actuellement en train de mettre a jour mes donnees. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
-      'Merci de nous avoir contactes. Pour le moment, notre systeme est en maintenance. Veuillez essayer notre support WhatsApp ou Telegram pour obtenir de l\'aide rapidement.',
+      'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram.',
+      'Bonjour ! Notre systeme est temporairement indisponible. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
     ];
-    const randomReply =
-      fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-    return NextResponse.json({ reply: randomReply });
+    return NextResponse.json({
+      reply: fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)],
+    });
   } catch (error) {
     console.error('Support chat error:', error);
     return NextResponse.json(
