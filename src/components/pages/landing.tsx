@@ -204,13 +204,13 @@ export default function LandingPage() {
 
           {gamesLoading ? (
             <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
-              {[...Array(8)].map((_, i) => (
-                <Skeleton key={i} className="shrink-0 w-[120px] h-[160px] rounded-2xl" />
+              {[...Array(12)].map((_, i) => (
+                <Skeleton key={i} className="shrink-0 w-[130px] h-[170px] rounded-2xl" />
               ))}
             </div>
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
-              {games.map((game, i) => (
+              {games.slice(0, 12).map((game, i) => (
                 <motion.div
                   key={game.id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -219,17 +219,14 @@ export default function LandingPage() {
                   transition={{ duration: 0.3, delay: i * 0.04 }}
                   className="shrink-0 snap-start"
                 >
-                  <div className="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 w-[120px] sm:w-[130px]">
-                    <div className="relative" style={{ width: '120px', height: '160px' }}>
-                      <Image
-                        src={game.image}
-                        alt={game.name}
-                        width={120}
-                        height={160}
-                        unoptimized
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
+                  <div className="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100">
+                    {/* Natural aspect ratio - no forced dimensions */}
+                    <img
+                      src={game.image}
+                      alt={game.name}
+                      className="w-[130px] sm:w-[140px] h-auto object-contain group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
                   </div>
                 </motion.div>
               ))}

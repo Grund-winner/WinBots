@@ -1,5 +1,4 @@
 import { db } from './src/lib/db';
-import { hashPassword } from './src/lib/auth';
 import { seedDefaultConfigs } from './src/lib/config';
 
 const GAMES_DATA = [
@@ -32,47 +31,49 @@ async function seed() {
   await seedDefaultConfigs();
   console.log('Default configs seeded.');
 
-  // Create admin user if not exists
-  const existingAdmin = await db.user.findUnique({ where: { email: 'admin@winbots.com' } });
-  if (!existingAdmin) {
-    const passwordHash = await hashPassword('Admin@2024');
-    const admin = await db.user.create({
-      data: {
-        username: 'Admin',
-        email: 'admin@winbots.com',
-        passwordHash,
-        role: 'admin',
-        referralCode: 'ADMIN01',
+  // Seed games - upsert: update existing + add missing
+  for (const game of GAMES_DATA) {
+    await db.game.upsert({
+      where: { slug: game.slug },
+      update: {
+        name: game.name,
+        image: `/games/${game.image}`,
+        description: game.description,
+        color: game.color,
+        icon: game.icon,
+        unlockType: game.unlockType,
+        unlockValue: game.unlockValue,
+        tier: game.tier,
+        sortOrder: game.sortOrder,
+        showOnLanding: game.showOnLanding,
+      },
+      create: {
+        name: game.name,
+        slug: game.slug,
+        image: `/games/${game.image}`,
+        description: game.description,
+        color: game.color,
+        icon: game.icon,
+        unlockType: game.unlockType,
+        unlockValue: game.unlockValue,
+        tier: game.tier,
+        sortOrder: game.sortOrder,
+        showOnLanding: game.showOnLanding,
       },
     });
-    console.log('Admin user created:', admin.username, admin.email);
-  } else {
-    console.log('Admin user already exists.');
   }
+  console.log(`${GAMES_DATA.length} games seeded/updated.`);
 
-  // Seed games (idempotent - skip if any exist)
-  const existingGames = await db.game.count();
-  if (existingGames === 0) {
-    for (const game of GAMES_DATA) {
-      await db.game.create({
-        data: {
-          name: game.name,
-          slug: game.slug,
-          image: `/games/${game.image}`,
-          description: game.description,
-          color: game.color,
-          icon: game.icon,
-          unlockType: game.unlockType,
-          unlockValue: game.unlockValue,
-          tier: game.tier,
-          sortOrder: game.sortOrder,
-          showOnLanding: game.showOnLanding,
-        },
-      });
+  // Ensure at least one admin exists (promote first user if needed)
+  const adminCount = await db.user.count({ where: { role: 'admin' } });
+  if (adminCount === 0) {
+    const firstUser = await db.user.findFirst({ orderBy: { createdAt: 'asc' } });
+    if (firstUser) {
+      await db.user.update({ where: { id: firstUser.id }, data: { role: 'admin' } });
+      console.log(`Promoted first user '${firstUser.username}' to admin.`);
     }
-    console.log(`${GAMES_DATA.length} games seeded.`);
   } else {
-    console.log(`Games already exist (${existingGames} found). Skipping.`);
+    console.log(`Admin already exists (${adminCount} found).`);
   }
 
   console.log('Done!');

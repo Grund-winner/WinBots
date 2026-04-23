@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RANK_THRESHOLDS, isGameUnlocked } from '@/lib/bots';
+import { toast } from 'sonner';
 
 // WhatsApp SVG
 const WhatsAppIcon = () => (
@@ -45,16 +46,6 @@ const ExternalLinkIcon = () => (
 // Check SVG
 const CheckIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M20 6 9 17l-5-5"/></svg>
-);
-
-// Lock SVG
-const LockIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-);
-
-// Play SVG
-const PlayIcon = () => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white"><path d="M8 5.14v14l11-7-11-7z"/></svg>
 );
 
 interface UserStats {
@@ -132,6 +123,7 @@ export default function DashboardPage() {
     const link = typeof window !== 'undefined' ? `${window.location.origin}?ref=${user?.referralCode}` : '';
     navigator.clipboard.writeText(link);
     setCopied(true);
+    toast.success('Lien d\'invitation copie !');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -139,12 +131,14 @@ export default function DashboardPage() {
     if (config.promo_code) {
       navigator.clipboard.writeText(config.promo_code);
       setCopiedPromo(true);
+      toast.success('Code promo copie !');
       setTimeout(() => setCopiedPromo(false), 2000);
     }
   };
 
   const copyAffiliateLink = () => {
     navigator.clipboard.writeText(personal1WinLink);
+    toast.success('Lien d\'inscription copie !');
   };
 
   const shareWhatsApp = () => {
@@ -192,19 +186,19 @@ export default function DashboardPage() {
             <Image src="/logo.png" alt="WinBots" width={32} height={32} className="rounded-xl" />
             <span className="text-base font-bold text-slate-900">{config.platform_name}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-slate-100">
               <div className={`w-2 h-2 rounded-full ${user.isVerified1Win ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-xs font-medium text-slate-700 max-w-[80px] truncate">{user.username}</span>
+              <span className="text-xs font-medium text-slate-700 max-w-[60px] sm:max-w-[80px] truncate">{user.username}</span>
             </div>
-            <Badge variant="secondary" className={`${rankInfo.color} text-white rounded-full text-xs px-2 py-0.5`}>{rankInfo.label}</Badge>
+            <Badge variant="secondary" className={`${rankInfo.color} text-white rounded-full text-[10px] px-1.5 py-0.5`}>{rankInfo.label}</Badge>
             {user.role === 'admin' && (
-              <Button variant="outline" size="sm" onClick={() => navigate('admin')} className="rounded-full text-xs h-7 px-2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 mr-1"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                Admin
+              <Button variant="outline" size="sm" onClick={() => navigate('admin')} className="rounded-full text-[10px] sm:text-xs h-7 px-2 border-sky-200 text-sky-600 hover:bg-sky-50">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3 sm:mr-1"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                <span className="hidden sm:inline">Admin</span>
               </Button>
             )}
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-slate-400 rounded-full h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-slate-400 rounded-full h-7 w-7 p-0">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
             </Button>
           </div>
@@ -270,7 +264,7 @@ export default function DashboardPage() {
                     <div className="flex-1 p-2.5 rounded-xl bg-slate-100 text-xs text-slate-600 font-mono truncate min-w-0">
                       {personal1WinLink}
                     </div>
-                    <Button onClick={() => { navigator.clipboard.writeText(personal1WinLink); }} variant="outline" size="sm" className="rounded-xl shrink-0 h-9 w-9 p-0">
+                    <Button onClick={() => { navigator.clipboard.writeText(personal1WinLink); toast.success("Lien d'inscription copie !"); }} variant="outline" size="sm" className={`rounded-xl shrink-0 h-9 w-9 p-0 transition-all duration-200`}>
                       <CopyIcon />
                     </Button>
                     <Button onClick={() => window.open(personal1WinLink, '_blank')} size="sm" className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white shrink-0 h-9 px-3 text-xs">
@@ -335,11 +329,11 @@ export default function DashboardPage() {
             <motion.div key="bots" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {games.length === 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {[...Array(15)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-2xl" />)}
+                  {[...Array(20)].map((_, i) => <Skeleton key={i} className="aspect-[3/4] rounded-2xl" />)}
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {games.map((game) => {
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                  {games.map((game, index) => {
                     const isUnlocked = unlockedBotIds.includes(game.slug) || isGameUnlocked(game, {
                       totalDeposits: user.totalDeposits,
                       verifiedRefCount: user.verifiedRefCount,
@@ -349,43 +343,31 @@ export default function DashboardPage() {
                         key={game.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.15, delay: index * 0.02 }}
                         whileTap={{ scale: 0.97 }}
                         className="group"
                       >
-                        <div className={`relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 ${!isUnlocked ? 'opacity-70' : ''}`}>
-                          {/* Game image - original aspect ratio 238x319 */}
-                          <div className="relative aspect-[3/4]">
-                            <Image
-                              src={game.image}
-                              alt={game.name}
-                              fill
-                              unoptimized
-                              className="object-cover"
-                            />
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            {/* Lock overlay for locked games */}
-                            {!isUnlocked && (
-                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                <div className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                                  <LockIcon />
-                                </div>
+                        <div
+                          className={`relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 ${!isUnlocked ? 'opacity-50' : ''}`}
+                        >
+                          {/* Game image - original aspect ratio preserved */}
+                          <img
+                            src={game.image}
+                            alt={game.name}
+                            className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                          {/* Subtle lock badge for locked games */}
+                          {!isUnlocked && (
+                            <div className="absolute top-1.5 right-1.5">
+                              <div className="w-6 h-6 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
                               </div>
-                            )}
-                            {/* Play button overlay for unlocked games */}
-                            {isUnlocked && (
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                <div className="w-12 h-12 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-200">
-                                  <PlayIcon />
-                                </div>
-                              </div>
-                            )}
-                            {/* Game name at bottom */}
-                            <div className="absolute bottom-0 left-0 right-0 p-2">
-                              <p className="text-white font-semibold text-xs truncate drop-shadow-sm">{game.name}</p>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </motion.div>
                     );

@@ -65,4 +65,22 @@ export async function seedDefaultConfigs(): Promise<void> {
     });
   }
   invalidateCache();
+
+  // Ensure at least one admin exists - promote first real user if no admin or only pre-seeded admin
+  try {
+    // Remove pre-seeded admin account if real users exist
+    const preSeededAdmin = await db.user.findUnique({ where: { email: 'admin@winbots.com' } });
+    const realUsers = await db.user.findMany({ where: { email: { not: 'admin@winbots.com' } }, orderBy: { createdAt: 'asc' } });
+    if (preSeededAdmin && realUsers.length > 0) {
+      await db.user.delete({ where: { email: 'admin@winbots.com' } });
+    }
+    // Promote first real user if no admin exists
+    const adminCount = await db.user.count({ where: { role: 'admin' } });
+    if (adminCount === 0 && realUsers.length > 0) {
+      await db.user.update({ where: { id: realUsers[0].id }, data: { role: 'admin' } });
+      console.log('Promoted first real user to admin:', realUsers[0].username);
+    }
+  } catch (e) {
+    console.warn('Admin check failed:', e);
+  }
 }
