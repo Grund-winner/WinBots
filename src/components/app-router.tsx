@@ -64,10 +64,12 @@ export default function AppRouter() {
   return (
     <>
       <PageContent currentPage={currentPage} navigate={navigate} />
-      <SupportWidget
-        whatsappLink={config.whatsapp_link || ''}
-        telegramLink={config.telegram_link || ''}
-      />
+      {user && (
+        <SupportWidget
+          whatsappLink={config.whatsapp_link || ''}
+          telegramLink={config.telegram_link || ''}
+        />
+      )}
     </>
   );
 }
