@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { ensureGamesSeeded } from '@/lib/config';
 
 export async function GET(request: NextRequest) {
   try {
+    // Ensure games exist (for fresh Vercel deployments)
+    await ensureGamesSeeded();
+
     const { searchParams } = new URL(request.url);
     const landingOnly = searchParams.get('landing') === 'true';
 

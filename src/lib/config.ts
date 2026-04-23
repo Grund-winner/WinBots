@@ -43,7 +43,41 @@ export function invalidateCache(): void {
   cacheLoaded = false;
 }
 
-// Seed default configs
+// Auto-seed games (safe to run on every request)
+export async function ensureGamesSeeded(): Promise<void> {
+  const count = await db.game.count();
+  if (count > 0) return; // Games already exist, skip
+
+  const GAMES = [
+    { name: 'Aviator', slug: 'aviator', image: '/games/aviator.avif', description: 'Algorithme de prediction pour le jeu Aviator', color: 'bg-sky-500', icon: 'Plane', unlockType: 'free', unlockValue: 0, tier: 1, sortOrder: 0, showOnLanding: true },
+    { name: 'Crash', slug: 'crash', image: '/games/crash.avif', description: 'Predictions avancees pour le jeu Crash', color: 'bg-red-500', icon: 'TrendingDown', unlockType: 'deposit', unlockValue: 5, tier: 2, sortOrder: 1, showOnLanding: true },
+    { name: 'Dice', slug: 'dice', image: '/games/dice.avif', description: 'Prediction intelligente pour le jeu de des', color: 'bg-violet-500', icon: 'Dice5', unlockType: 'deposit', unlockValue: 5, tier: 2, sortOrder: 2, showOnLanding: true },
+    { name: 'Mines', slug: 'mines', image: '/games/mines.avif', description: 'Detecteur de zones sur pour le jeu Mines', color: 'bg-amber-500', icon: 'Bomb', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 3, showOnLanding: true },
+    { name: 'JetX', slug: 'jetx', image: '/games/jetx.avif', description: 'Prediction JetX avec analyse en temps reel', color: 'bg-emerald-500', icon: 'Rocket', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 4, showOnLanding: true },
+    { name: 'Rocket', slug: 'rocket', image: '/games/rocket.avif', description: 'Prediction Rocket avec analyse de trajectoire', color: 'bg-orange-500', icon: 'Flame', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 5, showOnLanding: true },
+    { name: 'Aviam', slug: 'aviam', image: '/games/aviam.avif', description: 'Algorithme de prediction pour Aviam', color: 'bg-teal-500', icon: 'Zap', unlockType: 'free', unlockValue: 0, tier: 1, sortOrder: 6, showOnLanding: true },
+    { name: 'Lucky Jet', slug: 'lucky_jet', image: '/games/luckyjet.avif', description: 'Prediction Lucky Jet avec detection de tendances', color: 'bg-green-500', icon: 'Clover', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 7, showOnLanding: true },
+    { name: 'Spaceman', slug: 'spaceman', image: '/games/spaceman.avif', description: 'Prediction Spaceman avec algorithmes orbitaux', color: 'bg-indigo-500', icon: 'Astronaut', unlockType: 'referral', unlockValue: 5, tier: 5, sortOrder: 8, showOnLanding: true },
+    { name: 'Speed and Cash', slug: 'speed_cash', image: '/games/speedandcash.avif', description: 'Prediction rapide pour Speed and Cash', color: 'bg-yellow-500', icon: 'Zap', unlockType: 'referral', unlockValue: 15, tier: 5, sortOrder: 9, showOnLanding: true },
+    { name: 'Coin Run', slug: 'coin_run', image: '/games/coinrun.avif', description: 'Prediction Coin Run avec machine learning', color: 'bg-pink-500', icon: 'Coins', unlockType: 'referral', unlockValue: 30, tier: 6, sortOrder: 10, showOnLanding: true },
+    { name: 'Chicken', slug: 'chicken', image: '/games/chicken.avif', description: 'Prediction pour le jeu Chicken', color: 'bg-rose-500', icon: 'Zap', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 11, showOnLanding: true },
+    { name: 'Chook Train', slug: 'chook_train', image: '/games/chooktrain.avif', description: 'Prediction Chook Train avec analyse avancee', color: 'bg-fuchsia-500', icon: 'Zap', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 12, showOnLanding: false },
+    { name: 'Balloon', slug: 'balloon', image: '/games/balloon.avif', description: 'Prediction Balloon avec calcul de probabilites', color: 'bg-cyan-500', icon: 'Zap', unlockType: 'referral', unlockValue: 5, tier: 5, sortOrder: 13, showOnLanding: false },
+    { name: 'Fox', slug: 'fox', image: '/games/fox.avif', description: 'Prediction Fox avec reconnaissance de motifs', color: 'bg-amber-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 14, showOnLanding: false },
+    { name: 'Tower', slug: 'tower', image: '/games/tower.avif', description: 'Prediction Tower avec analyse structurelle', color: 'bg-stone-500', icon: 'Zap', unlockType: 'referral', unlockValue: 15, tier: 5, sortOrder: 15, showOnLanding: false },
+    { name: 'Tropicana', slug: 'tropicana', image: '/games/tropicana.avif', description: 'Prediction Tropicana avec tendances tropicales', color: 'bg-lime-500', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 16, showOnLanding: false },
+    { name: 'Plinko', slug: 'plinko', image: '/games/plinko.avif', description: 'Prediction Plinko avec calcul de trajectoire', color: 'bg-sky-600', icon: 'Zap', unlockType: 'referral', unlockValue: 30, tier: 6, sortOrder: 17, showOnLanding: false },
+    { name: 'RocketX', slug: 'rocketx', image: '/games/rocketx.avif', description: 'Prediction RocketX avec forecast avance', color: 'bg-red-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 18, showOnLanding: false },
+    { name: 'Nmines', slug: 'nmines', image: '/games/nmines.avif', description: 'Prediction Nmines avec detection avancee', color: 'bg-orange-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 19, showOnLanding: false },
+  ];
+
+  for (const game of GAMES) {
+    await db.game.create({ data: game });
+  }
+  console.log(`${GAMES.length} games auto-seeded.`);
+}
+
+// Seed default configs (called on every register/login)
 export async function seedDefaultConfigs(): Promise<void> {
   const defaults: Record<string, string> = {
     affiliate_link: 'https://lkts.pro/4debb2',
@@ -66,21 +100,10 @@ export async function seedDefaultConfigs(): Promise<void> {
   }
   invalidateCache();
 
-  // Ensure at least one admin exists - promote first real user if no admin or only pre-seeded admin
+  // Auto-seed games if none exist (for fresh deployments like Vercel)
   try {
-    // Remove pre-seeded admin account if real users exist
-    const preSeededAdmin = await db.user.findUnique({ where: { email: 'admin@winbots.com' } });
-    const realUsers = await db.user.findMany({ where: { email: { not: 'admin@winbots.com' } }, orderBy: { createdAt: 'asc' } });
-    if (preSeededAdmin && realUsers.length > 0) {
-      await db.user.delete({ where: { email: 'admin@winbots.com' } });
-    }
-    // Promote first real user if no admin exists
-    const adminCount = await db.user.count({ where: { role: 'admin' } });
-    if (adminCount === 0 && realUsers.length > 0) {
-      await db.user.update({ where: { id: realUsers[0].id }, data: { role: 'admin' } });
-      console.log('Promoted first real user to admin:', realUsers[0].username);
-    }
+    await ensureGamesSeeded();
   } catch (e) {
-    console.warn('Admin check failed:', e);
+    console.warn('Game seeding failed:', e);
   }
 }
