@@ -38,6 +38,76 @@ setInterval(() => {
   }
 }, 300_000);
 
+// ─── Groq API Key Management ────────────────────────────────────────────────
+
+// Keys that are temporarily marked as failed (e.g., rate limited) get a cooldown
+const failedKeys = new Map<string, number>(); // key -> timestamp when it can be retried
+const COOLDOWN_MS = 60_000; // 1 minute cooldown for failed keys
+
+function getAvailableKeys(): string[] {
+  const keys: string[] = [];
+
+  // Support multiple keys: GROQ_API_KEY_1, GROQ_API_KEY_2, ... GROQ_API_KEY_5
+  for (let i = 1; i <= 5; i++) {
+    const key = process.env[`GROQ_API_KEY_${i}`];
+    if (key && key.trim()) {
+      keys.push(key.trim());
+    }
+  }
+
+  // Fallback: single GROQ_API_KEY for backward compatibility
+  if (keys.length === 0) {
+    const singleKey = process.env.GROQ_API_KEY;
+    if (singleKey && singleKey.trim()) {
+      keys.push(singleKey.trim());
+    }
+  }
+
+  return keys;
+}
+
+function getWorkingKey(): string | null {
+  const keys = getAvailableKeys();
+  const now = Date.now();
+
+  // Find a key that isn't in cooldown
+  const available = keys.filter((key) => {
+    const failTime = failedKeys.get(key);
+    if (!failTime) return true;
+    if (now > failTime) {
+      failedKeys.delete(key);
+      return true;
+    }
+    return false;
+  });
+
+  if (available.length === 0) {
+    // If all keys are in cooldown, pick the one that will be available soonest
+    let soonestKey: string | null = null;
+    let soonestTime = Infinity;
+    for (const key of keys) {
+      const failTime = failedKeys.get(key);
+      if (failTime && failTime < soonestTime) {
+        soonestTime = failTime;
+        soonestKey = key;
+      }
+    }
+    // If the soonest key is ready now, use it
+    if (soonestKey && now >= soonestTime) {
+      failedKeys.delete(soonestKey!);
+      return soonestKey;
+    }
+    return null;
+  }
+
+  // Rotate: pick a random key from available ones for load distribution
+  return available[Math.floor(Math.random() * available.length)];
+}
+
+function markKeyFailed(key: string) {
+  failedKeys.set(key, Date.now() + COOLDOWN_MS);
+}
+
 // ─── System prompt ───────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Tu es un agent de support client humain pour WinBots, une plateforme de bots de prediction pour les jeux de casino 1win. Tu n'es PAS une intelligence artificielle. Tu es un conseiller dedie et professionnel.
@@ -88,20 +158,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for Groq API key
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      // Fallback response when API key is not configured
-      const fallbackReplies = [
-        'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram pour une reponse plus rapide.',
-        'Bonjour ! Je suis actuellement en train de mettre a jour mes donnees. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
-        'Merci de nous avoir contactes. Pour le moment, notre systeme est en maintenance. Veuillez essayez notre support WhatsApp ou Telegram pour obtenir de l\'aide rapidement.',
-      ];
-      const randomReply =
-        fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
-      return NextResponse.json({ reply: randomReply });
-    }
-
     // Build the messages array for Groq
     const apiMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -111,49 +167,100 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    // Call Groq API
-    const response = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: apiMessages,
-          max_tokens: 1024,
-          temperature: 0.7,
-          top_p: 0.9,
-        }),
+    // Get a working API key (with failover)
+    const apiKey = getWorkingKey();
+
+    if (!apiKey) {
+      // All keys are in cooldown - return a graceful fallback
+      const fallbackReplies = [
+        'Merci pour votre message ! Notre equipe est actuellement tres sollicitee. Veuillez reessayer dans quelques instants ou contactez-nous sur WhatsApp ou Telegram pour une reponse plus rapide.',
+        'Bonjour ! Nous recevons beaucoup de messages en ce moment. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
+        'Merci de nous avoir contactes. Notre systeme est temporairement surcharge. Veuillez reessayer dans un instant ou utiliser le support WhatsApp ou Telegram.',
+      ];
+      const randomReply =
+        fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
+      return NextResponse.json({ reply: randomReply });
+    }
+
+    // Try calling Groq API with failover
+    const allKeys = getAvailableKeys();
+    let lastError: string | null = null;
+
+    for (const key of allKeys) {
+      const failTime = failedKeys.get(key);
+      const now = Date.now();
+      if (failTime && now < failTime) continue; // Skip keys in cooldown
+
+      try {
+        const response = await fetch(
+          'https://api.groq.com/openai/v1/chat/completions',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${key}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'llama-3.3-70b-versatile',
+              messages: apiMessages,
+              max_tokens: 1024,
+              temperature: 0.7,
+              top_p: 0.9,
+            }),
+            signal: AbortSignal.timeout(15000), // 15s timeout per key
+          }
+        );
+
+        if (response.status === 429) {
+          // Rate limited - mark this key as failed and try next
+          markKeyFailed(key);
+          lastError = `Key rate limited (429)`;
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error('Groq API error:', response.status, errorData);
+          lastError = `API error ${response.status}`;
+          // Don't mark non-429 errors as key failures - they might be request-specific
+          if (response.status >= 500) {
+            markKeyFailed(key);
+          }
+          continue;
+        }
+
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content?.trim();
+
+        if (!reply) {
+          lastError = 'Empty response';
+          continue;
+        }
+
+        return NextResponse.json({ reply });
+      } catch (fetchError: any) {
+        if (fetchError?.name === 'TimeoutError') {
+          markKeyFailed(key);
+          lastError = 'Request timeout';
+          continue;
+        }
+        console.error('Groq fetch error:', fetchError);
+        lastError = fetchError?.message || 'Unknown error';
+        // Network errors - try next key
+        continue;
       }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error(
-        'Groq API error:',
-        response.status,
-        errorData
-      );
-      return NextResponse.json(
-        { error: 'Service indisponible. Veuillez reessayer plus tard.' },
-        { status: 503 }
-      );
     }
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content?.trim();
-
-    if (!reply) {
-      return NextResponse.json(
-        { error: 'Reponse vide du service. Veuillez reessayer.' },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ reply });
+    // All keys failed
+    console.error('All Groq keys failed. Last error:', lastError);
+    const fallbackReplies = [
+      'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram pour une reponse plus rapide.',
+      'Bonjour ! Je suis actuellement en train de mettre a jour mes donnees. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
+      'Merci de nous avoir contactes. Pour le moment, notre systeme est en maintenance. Veuillez essayer notre support WhatsApp ou Telegram pour obtenir de l\'aide rapidement.',
+    ];
+    const randomReply =
+      fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
+    return NextResponse.json({ reply: randomReply });
   } catch (error) {
     console.error('Support chat error:', error);
     return NextResponse.json(

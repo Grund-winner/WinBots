@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,23 +18,6 @@ interface ChatMessage {
 }
 
 // ─── Icons (inline SVGs) ─────────────────────────────────────────────────────
-
-function HeadsetIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-    </svg>
-  );
-}
 
 function ChatBubbleIcon({ className }: { className?: string }) {
   return (
@@ -129,6 +113,34 @@ function TypingIndicator() {
   );
 }
 
+// ─── Position persistence ───────────────────────────────────────────────────
+
+const STORAGE_KEY = 'winbots_support_pos';
+
+function getInitialPosition(): { x: number; y: number } {
+  if (typeof window === 'undefined') return { x: 0, y: 0 };
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        return parsed;
+      }
+    }
+  } catch {}
+  // Default: bottom-right corner
+  return {
+    x: window.innerWidth - 72,
+    y: window.innerHeight - 120,
+  };
+}
+
+function savePosition(pos: { x: number; y: number }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pos));
+  } catch {}
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function SupportWidget({
@@ -141,14 +153,30 @@ export default function SupportWidget({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Draggable state
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  // Draggable state - initialize from localStorage
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, pos_x: 0, pos_y: 0 });
   const hasDragged = useRef(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // ─── Initialize position on mount ──────────────────────────────────────
+
+  useEffect(() => {
+    setPosition(getInitialPosition());
+  }, []);
+
+  // ─── Save position to localStorage when it changes (after drag end) ──
+
+  const savePositionRef = useRef(false);
+  useEffect(() => {
+    if (position && savePositionRef.current) {
+      savePosition(position);
+      savePositionRef.current = false;
+    }
+  }, [position]);
 
   // ─── Scroll to bottom on new message ────────────────────────────────────
 
@@ -168,6 +196,7 @@ export default function SupportWidget({
 
   const handleDragStart = useCallback(
     (clientX: number, clientY: number) => {
+      if (!position) return;
       setIsDragging(true);
       hasDragged.current = false;
       dragStart.current = {
@@ -182,7 +211,7 @@ export default function SupportWidget({
 
   const handleDragMove = useCallback(
     (clientX: number, clientY: number) => {
-      if (!isDragging) return;
+      if (!isDragging || !position) return;
       const dx = clientX - dragStart.current.x;
       const dy = clientY - dragStart.current.y;
 
@@ -190,7 +219,7 @@ export default function SupportWidget({
         hasDragged.current = true;
       }
 
-      const btnSize = 56;
+      const btnSize = 60;
       const padding = 8;
       const newX = Math.max(
         padding,
@@ -203,36 +232,16 @@ export default function SupportWidget({
 
       setPosition({ x: newX, y: newY });
     },
-    [isDragging]
+    [isDragging, position]
   );
 
   const handleDragEnd = useCallback(() => {
-    if (!isDragging) return;
+    if (!isDragging || !position) return;
     setIsDragging(false);
 
-    // Snap to nearest edge
-    const btnSize = 56;
-    const snapThreshold = 40;
-    const viewportWidth = window.innerWidth;
-
-    const centerX = position.x + btnSize / 2;
-    let snappedX = position.x;
-
-    if (centerX < snapThreshold) {
-      snappedX = 8;
-    } else if (centerX > viewportWidth - snapThreshold) {
-      snappedX = viewportWidth - btnSize - 8;
-    } else if (position.x + btnSize / 2 < viewportWidth / 2) {
-      snappedX = 8;
-    } else {
-      snappedX = viewportWidth - btnSize - 8;
-    }
-
-    // Also snap to bottom
-    const viewportHeight = window.innerHeight;
-    const snappedY = Math.min(position.y, viewportHeight - btnSize - 16);
-
-    setPosition({ x: snappedX, y: snappedY });
+    // Stay where dropped - just save the position
+    savePositionRef.current = true;
+    savePosition(position);
   }, [isDragging, position]);
 
   // ─── Mouse events ───────────────────────────────────────────────────────
@@ -345,82 +354,101 @@ export default function SupportWidget({
     [sendMessage]
   );
 
-  // ─── Action buttons config ──────────────────────────────────────────────
+  // ─── Circular arrangement config ────────────────────────────────────────
 
   const actionButtons = [
     {
       label: 'Support IA',
-      icon: <ChatBubbleIcon className="w-5 h-5 text-white" />,
+      icon: <ChatBubbleIcon className="w-7 h-7 text-white" />,
       color: 'bg-blue-600 hover:bg-blue-700',
       onClick: openChat,
     },
     {
       label: 'WhatsApp',
-      icon: <WhatsAppIcon className="w-5 h-5 text-white" />,
+      icon: <WhatsAppIcon className="w-8 h-8 text-white" />,
       color: 'bg-green-500 hover:bg-green-600',
       onClick: () => window.open(whatsappLink, '_blank', 'noopener'),
     },
     {
       label: 'Telegram',
-      icon: <TelegramIcon className="w-5 h-5 text-white" />,
+      icon: <TelegramIcon className="w-7 h-7 text-white" />,
       color: 'bg-sky-500 hover:bg-sky-600',
       onClick: () => window.open(telegramLink, '_blank', 'noopener'),
     },
   ];
 
+  // Circular positions: 3 buttons spread around the top of the main button
+  const radius = 72; // distance from center of main button
+  const mainBtnSize = 60;
+  const subBtnSize = 50;
+  const angles = [
+    -Math.PI / 2,           // top center (Support IA)
+    -Math.PI / 2 - Math.PI / 3, // top-left (WhatsApp)
+    -Math.PI / 2 + Math.PI / 3, // top-right (Telegram)
+  ];
+
+  // Don't render until position is initialized
+  if (!position) return null;
+
   return (
     <>
       {/* ── Floating button + action buttons ── */}
       <div className="fixed z-50 pointer-events-none" style={{ left: position.x, top: position.y }}>
-        {/* Action buttons */}
+        {/* Action buttons - circular arrangement */}
         <AnimatePresence>
           {expanded && (
-            <motion.div
-              className="flex flex-col items-center gap-2 mb-3 pointer-events-auto"
-              initial={{ opacity: 0, scale: 0.6, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.6, y: 20 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            >
-              {actionButtons.map((btn, i) => (
-                <motion.button
-                  key={btn.label}
-                  className={`
-                    group flex items-center gap-2 rounded-full shadow-lg
-                    transition-colors duration-200
-                    ${btn.color}
-                  `}
-                  style={{ width: 48, height: 48 }}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 15 }}
-                  transition={{ delay: i * 0.06 }}
-                  onClick={btn.onClick}
-                  title={btn.label}
-                  aria-label={btn.label}
-                >
-                  {btn.icon}
-                  <span className="absolute right-full mr-2 whitespace-nowrap text-xs font-medium text-slate-700 bg-white px-2 py-1 rounded-lg shadow hidden group-hover:block">
-                    {btn.label}
-                  </span>
-                </motion.button>
-              ))}
-            </motion.div>
+            <>
+              {actionButtons.map((btn, i) => {
+                const angle = angles[i];
+                // Position relative to the center of the main button
+                const offsetX = Math.cos(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
+                const offsetY = Math.sin(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
+                return (
+                  <motion.button
+                    key={btn.label}
+                    className={`
+                      group pointer-events-auto absolute flex items-center justify-center
+                      rounded-full shadow-lg transition-colors duration-200
+                      ${btn.color}
+                    `}
+                    style={{
+                      width: subBtnSize,
+                      height: subBtnSize,
+                      left: offsetX,
+                      top: offsetY,
+                    }}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 400,
+                      damping: 25,
+                      delay: i * 0.05,
+                    }}
+                    onClick={btn.onClick}
+                    title={btn.label}
+                    aria-label={btn.label}
+                  >
+                    {btn.icon}
+                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-medium text-slate-700 bg-white px-2 py-1 rounded-lg shadow hidden group-hover:block">
+                      {btn.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </>
           )}
         </AnimatePresence>
 
         {/* Main FAB */}
         <motion.button
           className={`
-            pointer-events-auto flex items-center justify-center rounded-full shadow-lg
-            transition-colors duration-200 select-none
-            ${
-              expanded
-                ? 'bg-slate-700 hover:bg-slate-800'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }
+            pointer-events-auto flex items-center justify-center rounded-full shadow-xl
+            transition-colors duration-200 select-none overflow-hidden
+            ${expanded ? 'bg-slate-800' : 'bg-gradient-to-br from-blue-600 to-blue-700'}
           `}
-          style={{ width: 56, height: 56 }}
+          style={{ width: mainBtnSize, height: mainBtnSize }}
           whileTap={{ scale: 0.92 }}
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
@@ -434,7 +462,14 @@ export default function SupportWidget({
             {expanded ? (
               <CloseIcon className="w-6 h-6 text-white" />
             ) : (
-              <HeadsetIcon className="w-6 h-6 text-white" />
+              <Image
+                src="/logo.png"
+                alt="WinBots Support"
+                width={36}
+                height={36}
+                className="rounded-full object-cover"
+                draggable={false}
+              />
             )}
           </motion.div>
         </motion.button>
@@ -465,14 +500,24 @@ export default function SupportWidget({
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-blue-600">
-                    <HeadsetIcon className="w-5 h-5 text-white" />
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700">
+                    <Image
+                      src="/logo.png"
+                      alt="WinBots"
+                      width={28}
+                      height={28}
+                      className="rounded-full object-cover"
+                      draggable={false}
+                    />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900">
                       Support WinBots
                     </h3>
-                    <p className="text-xs text-slate-500">En ligne</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      <p className="text-xs text-slate-500">En ligne</p>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -490,8 +535,15 @@ export default function SupportWidget({
                 {messages.length === 0 && (
                   <div className="flex justify-center py-8">
                     <div className="text-center max-w-[260px]">
-                      <div className="flex items-center justify-center w-14 h-14 rounded-full bg-blue-50 mx-auto mb-3">
-                        <HeadsetIcon className="w-7 h-7 text-blue-600" />
+                      <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-blue-50 mx-auto mb-3">
+                        <Image
+                          src="/logo.png"
+                          alt="WinBots"
+                          width={36}
+                          height={36}
+                          className="rounded-full object-cover"
+                          draggable={false}
+                        />
                       </div>
                       <p className="text-sm text-slate-600 leading-relaxed">
                         Bonjour ! Comment puis-je vous aider aujourd&apos;hui ?

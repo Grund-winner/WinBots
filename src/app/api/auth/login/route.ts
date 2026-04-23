@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
 
     response.cookies.set(getSessionCookieName(), token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: '/',
     });
