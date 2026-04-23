@@ -697,26 +697,31 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-3">
                     {sentNotifications.map((n) => (
-                      <div key={n.id} className="p-3 rounded-xl bg-slate-50 space-y-1 group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <h4 className="text-sm font-medium text-slate-900 truncate">{n.title}</h4>
+                      <div key={n.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <h4 className="text-sm font-semibold text-slate-900 truncate">{n.title}</h4>
                             {n.hasImage && (
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-slate-400 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-500 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-xs text-slate-400">{n.readCount}/{n.totalUsers} lus</span>
-                            <button onClick={() => handleStartEdit(n)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-100 text-slate-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100" aria-label="Modifier">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button onClick={() => handleStartEdit(n)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" aria-label="Modifier">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                              <span className="text-xs font-medium">Modifier</span>
                             </button>
-                            <button onClick={() => handleDeleteNotification(n.id)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" aria-label="Supprimer">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                            <button onClick={() => handleDeleteNotification(n.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors" aria-label="Supprimer">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                              <span className="text-xs font-medium">Supprimer</span>
                             </button>
                           </div>
                         </div>
-                        <p className="text-sm text-slate-600">{n.message}</p>
-                        <p className="text-xs text-slate-400">{new Date(n.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-sm text-slate-600 leading-relaxed">{n.message}</p>
+                        <div className="flex items-center gap-3 pt-1">
+                          <span className="text-xs text-slate-400">{new Date(n.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-xs text-slate-300">|</span>
+                          <span className="text-xs text-slate-400">{n.readCount}/{n.totalUsers} lus</span>
+                        </div>
                       </div>
                     ))}
                   </div>

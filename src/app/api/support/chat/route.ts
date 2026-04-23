@@ -194,14 +194,14 @@ async function searchWeb(query: string): Promise<string | null> {
     const zai = await mod.create();
 
     const searchResult = await zai.functions.invoke('web_search', {
-      query: `1win casino ${query}`,
+      query: '1win casino ' + query,
       num: 5,
     });
 
     if (searchResult && Array.isArray(searchResult) && searchResult.length > 0) {
       const snippets = searchResult
         .slice(0, 3)
-        .map((r: { snippet?: string; name?: string }) => `- ${r.snippet || ''}`)
+        .map((r: { snippet?: string; name?: string }) => '- ' + (r.snippet || ''))
         .join('\n');
       return snippets || null;
     }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIp(request);
-    const { limited } = rateLimit(`chat_${ip}`, RATE_LIMITS.chat);
+    const { limited } = rateLimit('chat_' + ip, RATE_LIMITS.chat);
     if (limited) {
       return NextResponse.json(
         { error: 'Trop de requetes. Veuillez attendre une minute.' },
