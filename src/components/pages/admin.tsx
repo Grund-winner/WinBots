@@ -252,7 +252,7 @@ function SuggestionItem({ suggestion, onDelete }: { suggestion: AdminSuggestion;
                         <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
                       </div>
                     ) : screenshot ? (
-                      <img src={screenshot} alt="Capture d'ecran" className="max-w-full max-h-64 rounded-xl object-contain border border-slate-200" />
+                      <img src={screenshot} alt="Capture decran" className="max-w-full max-h-64 rounded-xl object-contain border border-slate-200" />
                     ) : (
                       <p className="text-xs text-slate-400">Impossible de charger l&apos;image</p>
                     )}
