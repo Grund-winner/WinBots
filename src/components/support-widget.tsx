@@ -344,7 +344,7 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
 
         // Also mark on server (fire and forget)
         if (unreadIds.length > 0) {
-          fetch('/api/notifications/read', {
+          fetch('/api/notifications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notificationIds: unreadIds }),
@@ -479,7 +479,7 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
   ];
 
   // Full circle: 5 buttons evenly from -90deg (top) going clockwise
-  const radius = 80;
+  const radius = 95;
   const mainBtnSize = 60;
   const subBtnSize = 46;
 
@@ -499,8 +499,12 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 const step = (2 * Math.PI) / total;
                 const angle = startAngle + step * i;
 
-                const offsetX = Math.cos(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
-                const offsetY = Math.sin(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
+                // Center of sub-button relative to center of main button
+                const centerX = Math.cos(angle) * radius;
+                const centerY = Math.sin(angle) * radius;
+                // Top-left of sub-button (so center lands at the right spot)
+                const offsetX = centerX - subBtnSize / 2 + mainBtnSize / 2;
+                const offsetY = centerY - subBtnSize / 2 + mainBtnSize / 2;
 
                 return (
                   <motion.button
@@ -532,29 +536,30 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
         </AnimatePresence>
 
         {/* Main FAB */}
-        <motion.button
-          className={`pointer-events-auto flex items-center justify-center rounded-full shadow-xl transition-colors duration-200 select-none overflow-hidden relative ${expanded ? 'bg-slate-800' : 'bg-gradient-to-br from-blue-600 to-blue-700'}`}
-          style={{ width: mainBtnSize, height: mainBtnSize }}
-          whileTap={{ scale: 0.92 }}
-          onMouseDown={onMouseDown}
-          onTouchStart={onTouchStart}
-          onClick={handleMainButtonClick}
-          aria-label={expanded ? 'Fermer le menu' : 'Ouvrir le support'}
-        >
-          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            {expanded ? (
-              <CloseIcon className="w-6 h-6 text-white" />
-            ) : (
-              <Image src="/logo.png" alt="WinBots Support" width={36} height={36} className="rounded-full object-cover" draggable={false} />
-            )}
-          </motion.div>
-          {/* Unread badge - positioned ABOVE the button, fully visible */}
+        <div className="relative" style={{ width: mainBtnSize, height: mainBtnSize }}>
+          <motion.button
+            className={`pointer-events-auto flex items-center justify-center rounded-full shadow-xl transition-colors duration-200 select-none overflow-hidden w-full h-full ${expanded ? 'bg-slate-800' : 'bg-gradient-to-br from-blue-600 to-blue-700'}`}
+            whileTap={{ scale: 0.92 }}
+            onMouseDown={onMouseDown}
+            onTouchStart={onTouchStart}
+            onClick={handleMainButtonClick}
+            aria-label={expanded ? 'Fermer le menu' : 'Ouvrir le support'}
+          >
+            <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+              {expanded ? (
+                <CloseIcon className="w-6 h-6 text-white" />
+              ) : (
+                <Image src="/logo.png" alt="WinBots Support" width={36} height={36} className="rounded-full object-cover" draggable={false} />
+              )}
+            </motion.div>
+          </motion.button>
+          {/* Unread badge - positioned ABOVE the button, outside overflow-hidden */}
           {!expanded && unreadCount > 0 && (
-            <span className="absolute -top-2 -right-1 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-[11px] font-bold rounded-full ring-[2.5px] ring-white z-10 shadow-sm">
+            <span className="absolute -top-2.5 -right-1 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-[11px] font-bold rounded-full ring-[2.5px] ring-white z-20 shadow-md pointer-events-none">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
-        </motion.button>
+        </div>
       </div>
 
       {/* ── Notifications Panel ── */}
