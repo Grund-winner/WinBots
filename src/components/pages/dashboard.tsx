@@ -136,11 +136,6 @@ export default function DashboardPage() {
     }
   };
 
-  const copyAffiliateLink = () => {
-    navigator.clipboard.writeText(personal1WinLink);
-    toast.success('Lien d\'inscription copie !');
-  };
-
   const shareWhatsApp = () => {
     const link = typeof window !== 'undefined' ? `${window.location.origin}?ref=${user?.referralCode}` : '';
     const text = `Tu cherches un moyen de gagner plus sur les jeux casino ? Rejoins WinBots et accede a des bots de prediction gratuits pour Aviator, Crash, Dice et plus. Inscription rapide, premier bot debloque immediatement. Clique ici : ${link}`;
@@ -264,9 +259,6 @@ export default function DashboardPage() {
                     <div className="flex-1 p-2.5 rounded-xl bg-slate-100 text-xs text-slate-600 font-mono truncate min-w-0">
                       {personal1WinLink}
                     </div>
-                    <Button onClick={() => { navigator.clipboard.writeText(personal1WinLink); toast.success("Lien d'inscription copie !"); }} variant="outline" size="sm" className={`rounded-xl shrink-0 h-9 w-9 p-0 transition-all duration-200`}>
-                      <CopyIcon />
-                    </Button>
                     <Button onClick={() => window.open(personal1WinLink, '_blank')} size="sm" className="rounded-xl bg-sky-500 hover:bg-sky-600 text-white shrink-0 h-9 px-3 text-xs">
                       S&apos;inscrire <ExternalLinkIcon />
                     </Button>

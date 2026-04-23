@@ -65,7 +65,7 @@ export default function AdminPage() {
   const { navigate, goBack } = useRouter();
   const { user } = useAuth();
   const { config, refresh: refreshConfig } = useSiteConfig();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'games' | 'config'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'games' | 'config' | 'postback'>('stats');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [games, setGames] = useState<AdminGame[]>([]);
@@ -216,6 +216,7 @@ export default function AdminPage() {
             { key: 'stats' as const, label: 'Statistiques' },
             { key: 'users' as const, label: 'Utilisateurs' },
             { key: 'games' as const, label: 'Jeux' },
+            { key: 'postback' as const, label: 'Postback' },
             { key: 'config' as const, label: 'Configuration' },
           ]).map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -383,24 +384,12 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          {/* Tier + Show on landing */}
+                          {/* Show on landing */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <Label className="text-xs text-slate-500">Niveau</Label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-400">Landing</span>
-                                <Switch checked={game.showOnLanding} onCheckedChange={(checked) => updateGameField(game.id, 'showOnLanding', checked)} />
-                              </div>
+                              <Label className="text-xs text-slate-500">Landing</Label>
+                              <Switch checked={game.showOnLanding} onCheckedChange={(checked) => updateGameField(game.id, 'showOnLanding', checked)} />
                             </div>
-                            <select
-                              value={game.tier}
-                              onChange={e => updateGameField(game.id, 'tier', Number(e.target.value))}
-                              className="w-full h-8 rounded-lg border border-slate-200 text-xs px-2 bg-white"
-                            >
-                              {[1, 2, 3, 4, 5, 6].map(t => (
-                                <option key={t} value={t}>Niveau {t}</option>
-                              ))}
-                            </select>
                           </div>
 
                           {/* Save button */}
@@ -420,6 +409,69 @@ export default function AdminPage() {
                 ))}
               </div>
             )}
+          </motion.div>
+        )}
+
+        {activeTab === 'postback' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle>Liens Postback</CardTitle>
+                <CardDescription>Copiez ces liens et configurez-les dans votre tableau de bord 1win partenaire.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  {[
+                    { label: 'Inscription (registration)', goal: 'reg', desc: 'Declenche quand un utilisateur s\'inscrit sur 1win' },
+                    { label: 'Premier depot (first_deposit)', goal: 'first_deposit', desc: 'Declenche au premier depot de l\'utilisateur' },
+                    { label: 'Depot (deposit)', goal: 'deposit', desc: 'Declenche a chaque depot de l\'utilisateur' },
+                    { label: 'Revenu (revenue)', goal: 'revenue', desc: 'Declenche quand 1win genere des revenus' },
+                  ].map((item) => {
+                    const link = `https://win-bots.vercel.app/api/postback?token=winbots_postback_secret_2024&sub1={sub1}&event_id={event_id}&goal=${item.goal}&amount={amount}`;
+                    const [copied, setCopied] = React.useState(false);
+                    return (
+                      <div key={item.goal} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm text-slate-700 font-medium">{item.label}</Label>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`rounded-lg h-7 text-xs transition-all ${copied ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ''}`}
+                            onClick={() => { navigator.clipboard.writeText(link); setCopied(true); toast.success('Lien copie !'); setTimeout(() => setCopied(false), 2000); }}
+                          >
+                            {copied ? (
+                              <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1 text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>Copie</>
+                            ) : (
+                              <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copier</>
+                            )}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-slate-400">{item.desc}</p>
+                        <div className="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-500 font-mono break-all leading-relaxed select-all">
+                          {link}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="border-t border-slate-100 pt-4">
+                  <div className="p-3 rounded-xl bg-amber-50 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                      <div>
+                        <p className="text-xs font-medium text-amber-800">Comment configurer</p>
+                        <ol className="text-xs text-amber-700 mt-1 space-y-1 list-decimal list-inside">
+                          <li>Connectez-vous a votre tableau de bord 1win partenaire</li>
+                          <li>Allez dans la section Postback / API</li>
+                          <li>Ajoutez chaque lien ci-dessus avec le goal correspondant</li>
+                          <li>Les macros {'{sub1}'}, {'{event_id}'} et {'{amount}'} seront remplacees automatiquement par 1win</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 

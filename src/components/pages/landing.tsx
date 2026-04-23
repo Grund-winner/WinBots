@@ -67,7 +67,7 @@ export default function LandingPage() {
   useEffect(() => {
     async function fetchGames() {
       try {
-        const res = await fetch('/api/games?landing=true');
+        const res = await fetch('/api/games');
         if (res.ok) {
           const data = await res.json();
           setGames(data.games || []);
@@ -204,13 +204,13 @@ export default function LandingPage() {
 
           {gamesLoading ? (
             <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
-              {[...Array(12)].map((_, i) => (
+              {[...Array(20)].map((_, i) => (
                 <Skeleton key={i} className="shrink-0 w-[130px] h-[170px] rounded-2xl" />
               ))}
             </div>
           ) : (
             <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide px-1">
-              {games.slice(0, 12).map((game, i) => (
+              {games.map((game, i) => (
                 <motion.div
                   key={game.id}
                   initial={{ opacity: 0, scale: 0.95 }}

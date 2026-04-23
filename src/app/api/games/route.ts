@@ -7,16 +7,8 @@ export async function GET(request: NextRequest) {
     // Ensure games exist (for fresh Vercel deployments)
     await ensureGamesSeeded();
 
-    const { searchParams } = new URL(request.url);
-    const landingOnly = searchParams.get('landing') === 'true';
-
-    const where = {
-      isActive: true,
-      ...(landingOnly ? { showOnLanding: true } : {}),
-    };
-
     const games = await db.game.findMany({
-      where,
+      where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     });
 
