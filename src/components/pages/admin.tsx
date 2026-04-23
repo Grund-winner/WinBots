@@ -292,7 +292,7 @@ function SuggestionItem({ suggestion, onDelete }: { suggestion: AdminSuggestion;
                   </Button>
                 </div>
 
-                {/* Delete suggestion */
+                {/* Delete suggestion */}
                 <div className="pt-2 border-t border-slate-100">
                   <button
                     onClick={() => onDelete(suggestion.id)}
