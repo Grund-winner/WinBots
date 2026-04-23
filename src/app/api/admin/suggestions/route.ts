@@ -84,3 +84,30 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
+
+// DELETE /api/admin/suggestions - Delete a suggestion
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getSession();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    }
+
+    await db.suggestion.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete suggestion error:', error);
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ error: 'Suggestion non trouvee' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

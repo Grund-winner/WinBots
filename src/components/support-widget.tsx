@@ -22,11 +22,12 @@ interface Notification {
   id: string;
   title: string;
   message: string;
+  image: string | null;
   createdAt: string;
   read: boolean;
 }
 
-// ─── Icons (inline SVGs) ─────────────────────────────────────────────────────
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
 function ChatBubbleIcon({ className }: { className?: string }) {
   return (
@@ -98,6 +99,14 @@ function ImageIcon({ className }: { className?: string }) {
   );
 }
 
+function TrashIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+    </svg>
+  );
+}
+
 // ─── Typing Indicator ────────────────────────────────────────────────────────
 
 function TypingIndicator() {
@@ -117,6 +126,7 @@ function TypingIndicator() {
 // ─── Position persistence ───────────────────────────────────────────────────
 
 const STORAGE_KEY = 'winbots_support_pos';
+const READ_NOTIFS_KEY = 'winbots_read_notifications';
 
 function getInitialPosition(): { x: number; y: number } {
   if (typeof window === 'undefined') return { x: 0, y: 0 };
@@ -132,6 +142,26 @@ function getInitialPosition(): { x: number; y: number } {
 
 function savePosition(pos: { x: number; y: number }) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pos)); } catch {}
+}
+
+function getLocalReadIds(): string[] {
+  try {
+    const saved = localStorage.getItem(READ_NOTIFS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+}
+
+function saveLocalReadIds(ids: string[]) {
+  try { localStorage.setItem(READ_NOTIFS_KEY, JSON.stringify(ids)); } catch {}
+}
+
+function addLocalReadId(id: string) {
+  const ids = getLocalReadIds();
+  if (!ids.includes(id)) {
+    ids.push(id);
+    saveLocalReadIds(ids);
+  }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -182,7 +212,7 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
     }
   }, [position]);
 
-  // ─── Poll for unread notification count (every 30s) ──────────────────
+  // ─── Compute unread count using localStorage as cache ─────────────────
 
   useEffect(() => {
     if (!user) {
@@ -195,7 +225,21 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
         const res = await fetch('/api/notifications?count=true');
         if (res.ok) {
           const data = await res.json();
-          setUnreadCount(data.unreadCount || 0);
+          const serverUnread = data.unreadCount || 0;
+
+          // Merge server read IDs into localStorage
+          if (data.readIds && Array.isArray(data.readIds)) {
+            const localIds = getLocalReadIds();
+            const merged = [...new Set([...localIds, ...data.readIds])];
+            saveLocalReadIds(merged);
+          }
+
+          // Calculate unread based on local storage
+          const localReadIds = new Set(getLocalReadIds());
+          const allServerIds = data.allIds || [];
+          const computedUnread = allServerIds.filter((id: string) => !localReadIds.has(id)).length;
+
+          setUnreadCount(computedUnread);
         }
       } catch {}
     };
@@ -287,21 +331,41 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
       const res = await fetch('/api/notifications');
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data.notifications || []);
-        // Mark unread as read
-        const unreadIds = (data.notifications || []).filter((n: Notification) => !n.read).map((n: Notification) => n.id);
+        const notifs = data.notifications || [];
+        setNotifications(notifs);
+
+        // Mark all as read locally and on server
+        const unreadNotifs = notifs.filter((n: Notification) => !n.read);
+        const unreadIds = unreadNotifs.map((n: Notification) => n.id);
+
+        // Save to localStorage immediately for persistence
+        unreadIds.forEach(id => addLocalReadId(id));
+        setUnreadCount(0);
+
+        // Also mark on server (fire and forget)
         if (unreadIds.length > 0) {
-          await fetch('/api/notifications/read', {
+          fetch('/api/notifications/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notificationIds: unreadIds }),
-          });
-          setUnreadCount(0);
+          }).catch(() => {});
         }
       }
     } catch {}
     setLoadingNotifs(false);
   }, []);
+
+  // ─── Delete a notification from user's view ──────────────────────────
+
+  const deleteNotification = useCallback((notifId: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+    addLocalReadId(notifId);
+    // Recalculate unread
+    const localReadIds = new Set(getLocalReadIds());
+    const remaining = notifications.filter((n) => n.id !== notifId);
+    const stillUnread = remaining.filter((n) => !n.read && !localReadIds.has(n.id));
+    setUnreadCount(stillUnread.length);
+  }, [notifications]);
 
   // ─── Suggestions ──────────────────────────────────────────────────────
 
@@ -313,14 +377,9 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
   const handleScreenshotUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("L'image ne doit pas depasser 2 Mo");
-      return;
-    }
+    if (file.size > 2 * 1024 * 1024) { toast.error("L'image ne doit pas depasser 2 Mo"); return; }
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setSuggestScreenshot(ev.target?.result as string);
-    };
+    reader.onload = (ev) => setSuggestScreenshot(ev.target?.result as string);
     reader.readAsDataURL(file);
   }, []);
 
@@ -331,10 +390,7 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
       const res = await fetch('/api/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: suggestMessage.trim(),
-          screenshot: suggestScreenshot,
-        }),
+        body: JSON.stringify({ message: suggestMessage.trim(), screenshot: suggestScreenshot }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -342,12 +398,8 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
         setSuggestMessage('');
         setSuggestScreenshot(null);
         setSuggestPanelOpen(false);
-      } else {
-        toast.error(data.error || 'Erreur lors de l\'envoi');
-      }
-    } catch {
-      toast.error('Erreur de connexion');
-    }
+      } else { toast.error(data.error || 'Erreur'); }
+    } catch { toast.error('Erreur de connexion'); }
     setSubmittingSuggestion(false);
   }, [suggestMessage, suggestScreenshot, submittingSuggestion]);
 
@@ -362,11 +414,7 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
     setInput('');
     setIsLoading(true);
     try {
-      const res = await fetch('/api/support/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
-      });
+      const res = await fetch('/api/support/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: newMessages }) });
       const data = await res.json();
       if (data.error) { toast.error(data.error); setIsLoading(false); return; }
       setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
@@ -394,21 +442,21 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
-  // ─── Action buttons config (5 buttons in semicircle) ──────────────────
+  // ─── Action buttons (5 buttons in full circle) ────────────────────────
 
   const actionButtons = [
+    {
+      label: 'Support IA',
+      icon: <ChatBubbleIcon className="w-6 h-6 text-white" />,
+      color: 'bg-blue-600 hover:bg-blue-700',
+      onClick: openChat,
+    },
     {
       label: 'Notifications',
       icon: <BellIcon className="w-6 h-6 text-white" />,
       color: 'bg-amber-500 hover:bg-amber-600',
       onClick: openNotifications,
       badge: unreadCount,
-    },
-    {
-      label: 'Support IA',
-      icon: <ChatBubbleIcon className="w-6 h-6 text-white" />,
-      color: 'bg-blue-600 hover:bg-blue-700',
-      onClick: openChat,
     },
     {
       label: 'WhatsApp',
@@ -430,8 +478,8 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
     },
   ];
 
-  // 5 buttons in a semicircle: from -150deg to -30deg
-  const radius = 78;
+  // Full circle: 5 buttons evenly from -90deg (top) going clockwise
+  const radius = 80;
   const mainBtnSize = 60;
   const subBtnSize = 46;
 
@@ -445,10 +493,10 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
           {expanded && (
             <>
               {actionButtons.map((btn, i) => {
-                const totalButtons = actionButtons.length;
-                const startAngle = -Math.PI * 5 / 6; // -150deg
-                const endAngle = -Math.PI / 6;       // -30deg
-                const step = totalButtons > 1 ? (endAngle - startAngle) / (totalButtons - 1) : 0;
+                const total = actionButtons.length;
+                // Start from top (-PI/2) and go clockwise (360 degrees)
+                const startAngle = -Math.PI / 2;
+                const step = (2 * Math.PI) / total;
                 const angle = startAngle + step * i;
 
                 const offsetX = Math.cos(angle) * radius - subBtnSize / 2 + mainBtnSize / 2;
@@ -468,9 +516,8 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                     aria-label={btn.label}
                   >
                     {btn.icon}
-                    {/* Unread badge */}
                     {btn.badge !== undefined && btn.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full ring-2 ring-white">
                         {btn.badge > 9 ? '9+' : btn.badge}
                       </span>
                     )}
@@ -494,12 +541,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
           onClick={handleMainButtonClick}
           aria-label={expanded ? 'Fermer le menu' : 'Ouvrir le support'}
         >
-          {/* Unread count badge on main button */}
-          {!expanded && unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white z-10">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
           <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
             {expanded ? (
               <CloseIcon className="w-6 h-6 text-white" />
@@ -507,6 +548,12 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
               <Image src="/logo.png" alt="WinBots Support" width={36} height={36} className="rounded-full object-cover" draggable={false} />
             )}
           </motion.div>
+          {/* Unread badge - positioned ABOVE the button, fully visible */}
+          {!expanded && unreadCount > 0 && (
+            <span className="absolute -top-2 -right-1 w-6 h-6 flex items-center justify-center bg-red-500 text-white text-[11px] font-bold rounded-full ring-[2.5px] ring-white z-10 shadow-sm">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </motion.button>
       </div>
 
@@ -523,7 +570,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500">
@@ -539,11 +585,10 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 </button>
               </div>
 
-              {/* Notifications list */}
               <div className="flex-1 overflow-y-auto">
                 {loadingNotifs ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 px-6">
@@ -554,20 +599,40 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                   </div>
                 ) : (
                   <div className="divide-y divide-slate-50">
-                    {notifications.map((notif) => (
-                      <div key={notif.id} className={`px-5 py-4 ${!notif.read ? 'bg-blue-50/50' : ''}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              {!notif.read && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
-                              <h4 className="text-sm font-semibold text-slate-900 truncate">{notif.title}</h4>
+                    {notifications.map((notif) => {
+                      const localReadIds = new Set(getLocalReadIds());
+                      const isRead = notif.read || localReadIds.has(notif.id);
+                      return (
+                        <div key={notif.id} className={`px-5 py-4 group relative ${!isRead ? 'bg-blue-50/50' : ''}`}>
+                          <button
+                            onClick={() => { addLocalReadId(notif.id); }}
+                            className="w-full text-left"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {!isRead && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />}
+                                  <h4 className="text-sm font-semibold text-slate-900 truncate">{notif.title}</h4>
+                                </div>
+                                <p className="text-sm text-slate-600 leading-relaxed">{notif.message}</p>
+                                {notif.image && (
+                                  <img src={notif.image} alt="" className="mt-2 max-w-full max-h-40 rounded-xl object-contain border border-slate-200" />
+                                )}
+                                <p className="text-xs text-slate-400 mt-2">{formatDate(notif.createdAt)}</p>
+                              </div>
                             </div>
-                            <p className="text-sm text-slate-600 leading-relaxed">{notif.message}</p>
-                            <p className="text-xs text-slate-400 mt-2">{formatDate(notif.createdAt)}</p>
-                          </div>
+                          </button>
+                          {/* Delete button */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }}
+                            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            aria-label="Supprimer"
+                          >
+                            <TrashIcon className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -589,7 +654,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-500">
@@ -605,21 +669,19 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 </button>
               </div>
 
-              {/* Form */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                 <div className="space-y-2">
                   <p className="text-xs text-slate-500">Votre message</p>
                   <textarea
                     value={suggestMessage}
                     onChange={(e) => setSuggestMessage(e.target.value)}
-                    placeholder="Decrivez votre suggestion... (ameliorer un jeu, ajouter une fonctionnalite, etc.)"
+                    placeholder="Decrivez votre suggestion..."
                     className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-32 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
                     maxLength={3000}
                   />
                   <p className="text-right text-xs text-slate-400">{suggestMessage.length}/3000</p>
                 </div>
 
-                {/* Screenshot upload */}
                 <div className="space-y-2">
                   <p className="text-xs text-slate-500">Capture d&apos;ecran (optionnel)</p>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleScreenshotUpload} className="hidden" />
@@ -646,25 +708,15 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 </div>
               </div>
 
-              {/* Submit */}
               <div className="border-t border-slate-100 px-5 py-3 flex items-center gap-2 bg-white">
                 <div className="flex-1" />
-                <button
-                  onClick={() => setSuggestPanelOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-50 transition-colors"
-                >
-                  Annuler
-                </button>
+                <button onClick={() => setSuggestPanelOpen(false)} className="px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-slate-50 transition-colors">Annuler</button>
                 <button
                   onClick={submitSuggestion}
                   disabled={!suggestMessage.trim() || submittingSuggestion}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 disabled:hover:bg-purple-600 transition-colors"
                 >
-                  {submittingSuggestion ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <SendIcon className="w-4 h-4" />
-                  )}
+                  {submittingSuggestion ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <SendIcon className="w-4 h-4" />}
                   Envoyer
                 </button>
               </div>
@@ -686,7 +738,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700">
@@ -705,7 +756,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 </button>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {messages.length === 0 && (
                   <div className="flex justify-center py-8">
@@ -728,7 +778,6 @@ export default function SupportWidget({ whatsappLink, telegramLink }: SupportWid
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Input */}
               <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-2 bg-white">
                 <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} placeholder="Votre message..." disabled={isLoading} className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all disabled:opacity-50" />
                 <button onClick={sendMessage} disabled={isLoading || !input.trim()} className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-blue-600 transition-colors shrink-0" aria-label="Envoyer">

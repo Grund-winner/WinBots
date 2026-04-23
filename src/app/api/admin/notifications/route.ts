@@ -27,6 +27,7 @@ export async function GET() {
       id: n.id,
       title: n.title,
       message: n.message,
+      hasImage: !!n.image,
       sentAt: n.createdAt.toISOString(),
       readCount: n._count.reads,
       totalUsers,
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, message } = body;
+    const { title, message, image } = body;
 
     if (!title || !message) {
       return NextResponse.json(
@@ -71,10 +72,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate image if provided
+    let imageData: string | undefined;
+    if (image && typeof image === 'string') {
+      if (image.length > 2_800_000) {
+        return NextResponse.json(
+          { error: "L'image ne doit pas depasser 2 Mo" },
+          { status: 400 }
+        );
+      }
+      if (
+        !image.startsWith('data:image/') ||
+        !image.includes(';base64,')
+      ) {
+        return NextResponse.json(
+          { error: "Format d'image invalide" },
+          { status: 400 }
+        );
+      }
+      imageData = image;
+    }
+
     const notification = await db.notification.create({
       data: {
         title: title.trim(),
         message: message.trim(),
+        image: imageData,
         sentBy: user.id,
       },
     });
@@ -89,6 +112,33 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Send notification error:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/notifications - Delete a notification
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getSession();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    }
+
+    await db.notification.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Delete notification error:', error);
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ error: 'Notification non trouvee' }, { status: 404 });
+    }
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

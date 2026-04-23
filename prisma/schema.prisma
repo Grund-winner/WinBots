@@ -102,6 +102,7 @@ model Notification {
   id        String   @id @default(cuid())
   title     String
   message   String
+  image     String?
   sentBy    String
   createdAt DateTime @default(now())
 

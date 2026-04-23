@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from '@/components/router';
 import { useAuth } from '@/components/auth-provider';
@@ -67,6 +67,7 @@ interface AdminNotification {
   id: string;
   title: string;
   message: string;
+  hasImage: boolean;
   sentAt: string;
   readCount: number;
   totalUsers: number;
@@ -116,7 +117,7 @@ function PostbackLinkItem({ label, goal, desc }: { label: string; goal: string; 
 
 // ─── Suggestion Detail Item ──────────────────────────────────────────────────
 
-function SuggestionItem({ suggestion }: { suggestion: AdminSuggestion }) {
+function SuggestionItem({ suggestion, onDelete }: { suggestion: AdminSuggestion; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [loadingScreenshot, setLoadingScreenshot] = useState(false);
@@ -290,6 +291,17 @@ function SuggestionItem({ suggestion }: { suggestion: AdminSuggestion }) {
                     {savingReply ? 'Envoi...' : 'Envoyer la reponse'}
                   </Button>
                 </div>
+
+                {/* Delete suggestion */
+                <div className="pt-2 border-t border-slate-100">
+                  <button
+                    onClick={() => onDelete(suggestion.id)}
+                    className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                    Supprimer cette suggestion
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -316,8 +328,10 @@ export default function AdminPage() {
   const [sentNotifications, setSentNotifications] = useState<AdminNotification[]>([]);
   const [notifTitle, setNotifTitle] = useState('');
   const [notifMessage, setNotifMessage] = useState('');
+  const [notifImage, setNotifImage] = useState<string | null>(null);
   const [sendingNotif, setSendingNotif] = useState(false);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const notifFileRef = useRef<HTMLInputElement>(null);
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<AdminSuggestion[]>([]);
@@ -422,12 +436,13 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: notifTitle.trim(), message: notifMessage.trim() }),
+        body: JSON.stringify({ title: notifTitle.trim(), message: notifMessage.trim(), image: notifImage }),
       });
       if (res.ok) {
         toast.success('Notification envoyee a tous les utilisateurs');
         setNotifTitle('');
         setNotifMessage('');
+        setNotifImage(null);
         fetchNotifications();
       } else {
         const data = await res.json();
@@ -436,6 +451,34 @@ export default function AdminPage() {
     } catch { toast.error('Erreur serveur'); }
     setSendingNotif(false);
   };
+
+  // Delete notification
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/notifications', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (res.ok) { toast.success('Notification supprimee'); setSentNotifications(prev => prev.filter(n => n.id !== id)); }
+      else toast.error('Erreur lors de la suppression');
+    } catch { toast.error('Erreur serveur'); }
+  };
+
+  // Delete suggestion
+  const handleDeleteSuggestion = async (id: string) => {
+    try {
+      const res = await fetch('/api/admin/suggestions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      if (res.ok) { toast.success('Suggestion supprimee'); setSuggestions(prev => prev.filter(s => s.id !== id)); }
+      else toast.error('Erreur lors de la suppression');
+    } catch { toast.error('Erreur serveur'); }
+  };
+
+  // Handle notification image upload
+  const handleNotifImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error("L'image ne doit pas depasser 2 Mo"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => setNotifImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
 
   if (!user || user.role !== 'admin') return null;
 
@@ -586,6 +629,23 @@ export default function AdminPage() {
                   <textarea value={notifMessage} onChange={e => setNotifMessage(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all" placeholder="Ecrivez votre message..." maxLength={2000} />
                   <p className="text-right text-xs text-slate-400">{notifMessage.length}/2000</p>
                 </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">Image (optionnel)</p>
+                  <input ref={notifFileRef} type="file" accept="image/*" onChange={handleNotifImageUpload} className="hidden" />
+                  {notifImage ? (
+                    <div className="relative inline-block">
+                      <img src={notifImage} alt="Apercu" className="max-w-full max-h-40 rounded-xl object-contain border border-slate-200" />
+                      <button type="button" onClick={() => setNotifImage(null)} className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => notifFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-slate-300 text-sm text-slate-500 hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50/50 transition-all">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+                      Ajouter une image
+                    </button>
+                  )}
+                </div>
                 <Button onClick={handleSendNotification} disabled={sendingNotif || !notifTitle.trim() || !notifMessage.trim()} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold">
                   {sendingNotif ? 'Envoi en cours...' : 'Envoyer a tous les utilisateurs'}
                 </Button>
@@ -605,10 +665,20 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-3">
                     {sentNotifications.map((n) => (
-                      <div key={n.id} className="p-3 rounded-xl bg-slate-50 space-y-1">
+                      <div key={n.id} className="p-3 rounded-xl bg-slate-50 space-y-1 group">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-slate-900">{n.title}</h4>
-                          <span className="text-xs text-slate-400">{n.readCount}/{n.totalUsers} lus</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <h4 className="text-sm font-medium text-slate-900 truncate">{n.title}</h4>
+                            {n.hasImage && (
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 text-slate-400 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs text-slate-400">{n.readCount}/{n.totalUsers} lus</span>
+                            <button onClick={() => handleDeleteNotification(n.id)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" aria-label="Supprimer">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                            </button>
+                          </div>
                         </div>
                         <p className="text-sm text-slate-600">{n.message}</p>
                         <p className="text-xs text-slate-400">{new Date(n.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
@@ -631,7 +701,7 @@ export default function AdminPage() {
             ) : (
               <div className="space-y-3">
                 {suggestions.map((s) => (
-                  <SuggestionItem key={s.id} suggestion={s} />
+                  <SuggestionItem key={s.id} suggestion={s} onDelete={handleDeleteSuggestion} />
                 ))}
               </div>
             )}

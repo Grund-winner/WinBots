@@ -3,7 +3,7 @@ import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
 
 // GET /api/notifications - Get notifications for logged-in user
-// ?count=true - returns only unread count
+// ?count=true - returns only unread count + list of read IDs
 export async function GET(request: Request) {
   try {
     const user = await getSession();
@@ -15,13 +15,24 @@ export async function GET(request: Request) {
     const countOnly = searchParams.get('count') === 'true';
 
     if (countOnly) {
-      // Return only the unread count
-      const totalNotifications = await db.notification.count();
-      const readCount = await db.notificationRead.count({
-        where: { userId: user.id },
+      // Get all notification IDs
+      const allNotifications = await db.notification.findMany({
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
       });
-      const unreadCount = totalNotifications - readCount;
-      return NextResponse.json({ unreadCount });
+      const allIds = allNotifications.map((n) => n.id);
+
+      // Get read notification IDs for this user
+      const reads = await db.notificationRead.findMany({
+        where: { userId: user.id },
+        select: { notificationId: true },
+      });
+      const readIds = reads.map((r) => r.notificationId);
+
+      const unreadCount = allIds.length - readIds.length;
+
+      return NextResponse.json({ unreadCount, allIds, readIds });
     }
 
     // Return all notifications with read status
@@ -41,6 +52,7 @@ export async function GET(request: Request) {
       id: n.id,
       title: n.title,
       message: n.message,
+      image: n.image || null,
       createdAt: n.createdAt.toISOString(),
       read: readIds.has(n.id),
     }));
