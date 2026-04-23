@@ -123,13 +123,13 @@ RECOMPENSES DE PARRAINAGE (MENSUEL) :
   - 3eme : ${rewardThird}$
 - Consultez le Classement pour voir votre position
 
-BOUTON FLOTTANT (menu support sur le tableau de bord) :
+BOUTON FLOTTANT (menu sur le tableau de bord) :
 Ce bouton rond avec le logo ${platformName} affiche 5 sous-boutons :
-1. **Support IA** (bleu) : chat en direct pour poser des questions sur ${platformName} et 1win
-2. **Notifications** (orange) : voir les messages et annonces de l'equipe ${platformName}
-3. **WhatsApp** (vert) : contacter le support via WhatsApp
-4. **Telegram** (bleu ciel) : contacter le support via Telegram
-5. **Suggestion** (violet) : envoyer une suggestion ou signaler un bug a l'equipe ${platformName} (avec option d'ajouter une capture d'ecran)
+1. **Support IA** (bleu) : le SEUL support - chat en direct pour poser des questions sur ${platformName} et 1win
+2. **Notifications** (orange) : voir les messages de l'equipe ${platformName}
+3. **WhatsApp** (vert) : reseau social - pour rejoindre la chaine WhatsApp de ${platformName} (ce n'est PAS un support)
+4. **Telegram** (bleu ciel) : reseau social - pour rejoindre la chaine Telegram de ${platformName} (ce n'est PAS un support)
+5. **Suggestion** (violet) : envoyer une suggestion ou signaler un bug a l'equipe ${platformName}
 
 PARRAINAGE :
 - Lien unique dans l'onglet "Parrainage" du tableau de bord
@@ -182,7 +182,7 @@ STYLE (TRES IMPORTANT) :
 
   Le depot se fait directement sur votre **compte 1win**."
 - Ne fais JAMAIS de longs paragraphes
-- Si incertain -> oriente vers WhatsApp${whatsappLink ? ` (${whatsappLink})` : ''} ou Telegram${telegramLink ? ` (${telegramLink})` : ''}`;
+- Si incertain -> oriente vers la chaine WhatsApp${whatsappLink ? ` (${whatsappLink})` : ''} ou la chaine Telegram${telegramLink ? ` (${telegramLink})` : ''}, ou dis a l'utilisateur de revenir plus tard sur le Support IA
 }
 
 // ─── Web search for 1win questions ──────────────────────────────────────────
