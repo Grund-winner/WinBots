@@ -59,3 +59,4 @@ db/*.db-journal
 
 # Upload files
 /upload/
+.env*.local
