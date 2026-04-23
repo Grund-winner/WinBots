@@ -61,6 +61,36 @@ interface AdminGame {
   createdAt: string;
 }
 
+// Postback link item component (separate to avoid hooks in .map())
+function PostbackLinkItem({ label, goal, desc }: { label: string; goal: string; desc: string }) {
+  const [copied, setCopied] = useState(false);
+  const link = `https://win-bots.vercel.app/api/postback?token=winbots_postback_secret_2024&sub1={sub1}&event_id={event_id}&goal=${goal}&amount={amount}`;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm text-slate-700 font-medium">{label}</Label>
+        <Button
+          variant="outline"
+          size="sm"
+          className={`rounded-lg h-7 text-xs transition-all ${copied ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ''}`}
+          onClick={() => { navigator.clipboard.writeText(link); setCopied(true); toast.success('Lien copie !'); setTimeout(() => setCopied(false), 2000); }}
+        >
+          {copied ? (
+            <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1 text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>Copie</>
+          ) : (
+            <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copier</>
+          )}
+        </Button>
+      </div>
+      <p className="text-xs text-slate-400">{desc}</p>
+      <div className="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-500 font-mono break-all leading-relaxed select-all">
+        {link}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { navigate, goBack } = useRouter();
   const { user } = useAuth();
@@ -171,26 +201,33 @@ export default function AdminPage() {
   const handleSaveGame = async (game: AdminGame) => {
     setSavingGame(game.id);
     try {
+      const payload = {
+        id: game.id,
+        name: game.name,
+        description: game.description,
+        isActive: game.isActive,
+        showOnLanding: game.showOnLanding,
+        unlockType: game.unlockType,
+        unlockValue: game.unlockValue,
+        tier: game.tier,
+      };
+      console.log('Saving game:', payload);
       const res = await fetch('/api/admin/games', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: game.id,
-          name: game.name,
-          description: game.description,
-          isActive: game.isActive,
-          showOnLanding: game.showOnLanding,
-          unlockType: game.unlockType,
-          unlockValue: game.unlockValue,
-          tier: game.tier,
-        }),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
+        const data = await res.json();
         toast.success(`${game.name} mis a jour`);
+        console.log('Game saved:', data);
       } else {
-        toast.error('Erreur lors de la mise a jour');
+        const errData = await res.json().catch(() => ({}));
+        console.error('Save failed:', res.status, errData);
+        toast.error(`Erreur: ${errData.error || 'mise a jour echouee'}`);
       }
-    } catch {
+    } catch (err) {
+      console.error('Save error:', err);
       toast.error('Erreur serveur');
     }
     setSavingGame(null);
@@ -421,38 +458,10 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  {[
-                    { label: 'Inscription (registration)', goal: 'reg', desc: 'Declenche quand un utilisateur s\'inscrit sur 1win' },
-                    { label: 'Premier depot (first_deposit)', goal: 'first_deposit', desc: 'Declenche au premier depot de l\'utilisateur' },
-                    { label: 'Depot (deposit)', goal: 'deposit', desc: 'Declenche a chaque depot de l\'utilisateur' },
-                    { label: 'Revenu (revenue)', goal: 'revenue', desc: 'Declenche quand 1win genere des revenus' },
-                  ].map((item) => {
-                    const link = `https://win-bots.vercel.app/api/postback?token=winbots_postback_secret_2024&sub1={sub1}&event_id={event_id}&goal=${item.goal}&amount={amount}`;
-                    const [copied, setCopied] = React.useState(false);
-                    return (
-                      <div key={item.goal} className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-sm text-slate-700 font-medium">{item.label}</Label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`rounded-lg h-7 text-xs transition-all ${copied ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : ''}`}
-                            onClick={() => { navigator.clipboard.writeText(link); setCopied(true); toast.success('Lien copie !'); setTimeout(() => setCopied(false), 2000); }}
-                          >
-                            {copied ? (
-                              <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1 text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>Copie</>
-                            ) : (
-                              <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copier</>
-                            )}
-                          </Button>
-                        </div>
-                        <p className="text-xs text-slate-400">{item.desc}</p>
-                        <div className="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-500 font-mono break-all leading-relaxed select-all">
-                          {link}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <PostbackLinkItem label="Inscription (registration)" goal="reg" desc="Declenche quand un utilisateur s'inscrit sur 1win" />
+                  <PostbackLinkItem label="Premier depot (first_deposit)" goal="first_deposit" desc="Declenche au premier depot de l'utilisateur" />
+                  <PostbackLinkItem label="Depot (deposit)" goal="deposit" desc="Declenche a chaque depot de l'utilisateur" />
+                  <PostbackLinkItem label="Revenu (revenue)" goal="revenue" desc="Declenche quand 1win genere des revenus" />
                 </div>
                 <div className="border-t border-slate-100 pt-4">
                   <div className="p-3 rounded-xl bg-amber-50 space-y-2">
