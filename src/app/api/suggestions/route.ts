@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
+import { sanitizeString, stripHtml, truncate } from '@/lib/sanitize';
 
 // POST /api/suggestions - Submit a suggestion/feedback
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { limited } = rateLimit(`suggestion_${ip}`, RATE_LIMITS.suggestions);
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Trop de requetes. Veuillez attendre.' },
+        { status: 429 }
+      );
+    }
+
     const user = await getSession();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
@@ -26,6 +38,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Sanitize message (strip HTML)
+    const sanitizedMessage = stripHtml(message.trim());
 
     // Validate screenshot if provided (base64 data URL, max ~2MB)
     let screenshotData: string | undefined;
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         username: user.username,
-        message: message.trim(),
+        message: sanitizedMessage,
         screenshot: screenshotData,
       },
     });

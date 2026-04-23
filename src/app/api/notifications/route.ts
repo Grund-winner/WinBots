@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
 
 // GET /api/notifications - Get notifications for logged-in user
 // ?count=true - returns only unread count + list of read IDs
@@ -70,6 +71,13 @@ export async function POST(request: Request) {
     const user = await getSession();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifie' }, { status: 401 });
+    }
+
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { limited } = rateLimit(`notif_read_${ip}`, RATE_LIMITS.notifications);
+    if (limited) {
+      return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
     }
 
     const body = await request.json();

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
+import { sanitizeString, stripHtml, truncate } from '@/lib/sanitize';
 
 // GET /api/admin/notifications - List all sent notifications
 export async function GET() {
@@ -48,6 +50,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
     }
 
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { limited } = rateLimit(`admin_notif_${ip}`, RATE_LIMITS.admin);
+    if (limited) {
+      return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
+    }
+
     const body = await request.json();
     const { title, message, image } = body;
 
@@ -58,19 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (title.trim().length > 100) {
-      return NextResponse.json(
-        { error: 'Le titre ne doit pas depasser 100 caracteres' },
-        { status: 400 }
-      );
-    }
-
-    if (message.trim().length > 2000) {
-      return NextResponse.json(
-        { error: 'Le message ne doit pas depasser 2000 caracteres' },
-        { status: 400 }
-      );
-    }
+    // Sanitize inputs
+    const cleanTitle = truncate(stripHtml(title.trim()), 100);
+    const cleanMessage = truncate(stripHtml(message.trim()), 2000);
 
     // Validate image if provided
     let imageData: string | undefined;
@@ -95,8 +94,8 @@ export async function POST(request: NextRequest) {
 
     const notification = await db.notification.create({
       data: {
-        title: title.trim(),
-        message: message.trim(),
+        title: cleanTitle,
+        message: cleanMessage,
         image: imageData,
         sentBy: user.id,
       },

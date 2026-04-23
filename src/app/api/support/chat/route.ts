@@ -1,42 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// ─── In-memory rate limiter ──────────────────────────────────────────────────
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const rateLimitMap = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_MAX = 10;
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-
-  entry.count++;
-  if (entry.count > RATE_LIMIT_MAX) {
-    return true;
-  }
-  return false;
-}
-
-// ─── Cleanup stale entries every 5 minutes ──────────────────────────────────
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetAt) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}, 300_000);
+import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
+import { sanitizeString, truncate } from '@/lib/sanitize';
 
 // ─── Groq API Key Management ────────────────────────────────────────────────
 
@@ -135,12 +99,9 @@ Regles :
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      request.headers.get('x-real-ip') ||
-      'unknown';
-
-    if (isRateLimited(ip)) {
+    const ip = getClientIp(request);
+    const { limited } = rateLimit(`chat_${ip}`, RATE_LIMITS.chat);
+    if (limited) {
       return NextResponse.json(
         { error: 'Trop de requetes. Veuillez attendre une minute.' },
         { status: 429 }
@@ -158,10 +119,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and sanitize messages
+    const sanitizedMessages = messages
+      .filter((m: { role: string; content: string }) => {
+        if (typeof m.content !== 'string') return false;
+        if (m.content.length > 5000) return false;
+        if (!['user', 'assistant'].includes(m.role)) return false;
+        return true;
+      })
+      .map((m: { role: string; content: string }) => ({
+        role: m.role,
+        content: sanitizeString(m.content).slice(0, 2000),
+      }));
+
+    if (sanitizedMessages.length === 0) {
+      return NextResponse.json(
+        { error: 'Messages invalides.' },
+        { status: 400 }
+      );
+    }
+
     // Build the messages array for Groq
     const apiMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...messages.map((m: { role: string; content: string }) => ({
+      ...sanitizedMessages.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,
       })),

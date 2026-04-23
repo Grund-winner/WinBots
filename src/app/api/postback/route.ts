@@ -2,17 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { RANK_THRESHOLDS } from '@/lib/bots';
 
+// Constant-time string comparison to prevent timing attacks
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+function verifyPostbackToken(token: string | null): boolean {
+  const validToken = process.env.POSTBACK_SECRET;
+  if (!validToken || !token) return false;
+  return constantTimeEqual(token, validToken);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token');
 
-  if (!token) {
-    return NextResponse.json({ error: 'Token requis' }, { status: 400 });
-  }
-
-  // Verify token (simple shared secret for postback authentication)
-  const validToken = process.env.POSTBACK_SECRET || 'winbots_postback_secret_2024';
-  if (token !== validToken) {
+  if (!verifyPostbackToken(token)) {
     return NextResponse.json({ error: 'Token invalide' }, { status: 403 });
   }
 
@@ -28,9 +38,8 @@ export async function POST(request: NextRequest) {
     const sub1 = searchParams.get('sub1') || '';
     const amount = parseFloat(searchParams.get('amount') || '0');
 
-    // Verify token
-    const validToken = process.env.POSTBACK_SECRET || 'winbots_postback_secret_2024';
-    if (!token || token !== validToken) {
+    // Verify token with constant-time comparison
+    if (!verifyPostbackToken(token)) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 403 });
     }
 
@@ -54,11 +63,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if event already processed
-    const existingEvent = await db.postbackEvent.findUnique({
-      where: { eventId },
-    });
-    if (existingEvent) {
-      return NextResponse.json({ message: 'Evenement deja traite', eventId });
+    if (eventId) {
+      const existingEvent = await db.postbackEvent.findUnique({
+        where: { eventId },
+      });
+      if (existingEvent) {
+        return NextResponse.json({ message: 'Evenement deja traite', eventId });
+      }
     }
 
     // Normalize event type
@@ -85,13 +96,11 @@ export async function POST(request: NextRequest) {
 
     // Process based on event type
     if (normalizedType === 'registration') {
-      // Mark user as verified on 1win
       await db.user.update({
         where: { id: user.id },
         data: { isVerified1Win: true },
       });
 
-      // Increment referrer's verified count
       if (user.referredById) {
         const referrer = await db.user.findUnique({
           where: { id: user.referredById },
@@ -103,7 +112,6 @@ export async function POST(request: NextRequest) {
             data: { verifiedRefCount: newCount },
           });
 
-          // Check referral game unlocks
           const referralGames = allGames.filter(g => g.unlockType === 'referral');
           for (const game of referralGames) {
             if (newCount >= game.unlockValue) {
@@ -119,7 +127,6 @@ export async function POST(request: NextRequest) {
               });
             }
           }
-          // Update rank
           await updateRank(referrer.id, newCount);
         }
       }
@@ -132,7 +139,6 @@ export async function POST(request: NextRequest) {
         data: { totalDeposits: currentDeposits },
       });
 
-      // Check deposit game unlocks
       const depositGames = allGames.filter(g => g.unlockType === 'deposit');
       for (const game of depositGames) {
         if (currentDeposits >= game.unlockValue) {
@@ -148,7 +154,6 @@ export async function POST(request: NextRequest) {
           });
         }
       }
-      // Update rank based on deposits
       await updateRank(user.id, user.verifiedRefCount, currentDeposits);
     }
 
