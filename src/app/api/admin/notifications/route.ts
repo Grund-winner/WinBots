@@ -141,3 +141,82 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
+
+// PUT /api/admin/notifications - Edit a notification
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await getSession();
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Non autorise' }, { status: 403 });
+    }
+
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { limited } = rateLimit(`admin_notif_${ip}`, RATE_LIMITS.admin);
+    if (limited) {
+      return NextResponse.json({ error: 'Trop de requetes' }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const { id, title, message, image } = body;
+
+    if (!id || (!title && !message)) {
+      return NextResponse.json(
+        { error: 'ID et au moins un champ requis' },
+        { status: 400 }
+      );
+    }
+
+    // Find existing notification
+    const existing = await db.notification.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Notification non trouvee' }, { status: 404 });
+    }
+
+    // Sanitize inputs
+    const cleanTitle = title ? truncate(stripHtml(title.trim()), 100) : existing.title;
+    const cleanMessage = message ? truncate(stripHtml(message.trim()), 2000) : existing.message;
+
+    // Validate image if provided
+    let imageData: string | undefined = existing.image || undefined;
+    if (image !== undefined) {
+      if (image === null || image === '') {
+        imageData = undefined; // Remove image
+      } else if (typeof image === 'string') {
+        if (image.length > 2_800_000) {
+          return NextResponse.json({ error: "L'image ne doit pas depasser 2 Mo" }, { status: 400 });
+        }
+        if (!image.startsWith('data:image/') || !image.includes(';base64,')) {
+          return NextResponse.json({ error: "Format d'image invalide" }, { status: 400 });
+        }
+        imageData = image;
+      }
+    }
+
+    const updated = await db.notification.update({
+      where: { id },
+      data: {
+        title: cleanTitle,
+        message: cleanMessage,
+        image: imageData,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      notification: {
+        id: updated.id,
+        title: updated.title,
+        message: updated.message,
+        hasImage: !!updated.image,
+        sentAt: updated.createdAt.toISOString(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Edit notification error:', error);
+    if (error?.code === 'P2025') {
+      return NextResponse.json({ error: 'Notification non trouvee' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}

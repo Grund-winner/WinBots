@@ -332,6 +332,12 @@ export default function AdminPage() {
   const [sendingNotif, setSendingNotif] = useState(false);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
   const notifFileRef = useRef<HTMLInputElement>(null);
+  // Edit notification state
+  const [editingNotif, setEditingNotif] = useState<AdminNotification | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+  const [editImage, setEditImage] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<AdminSuggestion[]>([]);
@@ -459,6 +465,32 @@ export default function AdminPage() {
       if (res.ok) { toast.success('Notification supprimee'); setSentNotifications(prev => prev.filter(n => n.id !== id)); }
       else toast.error('Erreur lors de la suppression');
     } catch { toast.error('Erreur serveur'); }
+  };
+
+  // Edit notification
+  const handleStartEdit = (notif: AdminNotification) => {
+    setEditingNotif(notif);
+    setEditTitle(notif.title);
+    setEditMessage(notif.message);
+    setEditImage(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingNotif || !editTitle.trim() || !editMessage.trim()) { toast.error('Titre et message requis'); return; }
+    setSavingEdit(true);
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingNotif.id, title: editTitle.trim(), message: editMessage.trim(), image: editImage }),
+      });
+      if (res.ok) {
+        toast.success('Notification modifiee');
+        setEditingNotif(null);
+        fetchNotifications();
+      } else { const data = await res.json(); toast.error(data.error || 'Erreur'); }
+    } catch { toast.error('Erreur serveur'); }
+    setSavingEdit(false);
   };
 
   // Delete suggestion
@@ -675,6 +707,9 @@ export default function AdminPage() {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="text-xs text-slate-400">{n.readCount}/{n.totalUsers} lus</span>
+                            <button onClick={() => handleStartEdit(n)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-blue-100 text-slate-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100" aria-label="Modifier">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
                             <button onClick={() => handleDeleteNotification(n.id)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-100 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100" aria-label="Supprimer">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                             </button>
@@ -688,6 +723,45 @@ export default function AdminPage() {
                 )}
               </CardContent>
             </Card>
+            {/* Edit notification modal - outside CardContent */}
+            {editingNotif && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setEditingNotif(null)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-slate-900">Modifier la notification</h3>
+                    <button onClick={() => setEditingNotif(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium text-sm">Titre</Label>
+                    <Input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="rounded-xl" maxLength={100} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium text-sm">Message</Label>
+                    <textarea value={editMessage} onChange={e => setEditMessage(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-all" maxLength={2000} />
+                    <p className="text-right text-xs text-slate-400">{editMessage.length}/2000</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-500">Changer l&apos;image (laisser vide pour garder l&apos;actuelle)</p>
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 2 * 1024 * 1024) { toast.error("Image trop volumineuse (max 2 Mo)"); return; }
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setEditImage(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }} className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" />
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <button onClick={() => setEditingNotif(null)} className="flex-1 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100 transition-colors">Annuler</button>
+                    <Button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim() || !editMessage.trim()} className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold">
+                      {savingEdit ? 'Enregistrement...' : 'Enregistrer'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
