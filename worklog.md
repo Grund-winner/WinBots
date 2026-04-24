@@ -156,3 +156,35 @@ Stage Summary:
 - 4 crash games confirmed working with DVYS predictions visible
 - Fox job may need additional testing on real device (Playwright limitation)
 - Key fix: middleware.ts CSP headers for /games/bots/* path
+---
+Task ID: 1
+Agent: main
+Task: Fix multiple issues - delete duplicate Rocket Queen, restore Nmines, fix double back button, fix iframe rendering, deploy to production
+
+Work Log:
+- Analyzed screenshots: identified duplicate Rocket Queen (game 21) circled by user, double back button on prediction page
+- Found duplicate: `rocket` (sortOrder 5, maps to rocketqueen folder) AND `rocket_queen` (sortOrder 19, no bot page) in seed data
+- Found Nmines was removed from seed data but image exists at `/public/games/nmines.avif`
+- Deleted `rocket_queen` entry from both `seed.ts` and `config.ts` GAMES_SEED array
+- Restored `Nmines` game (free, tier 1, sortOrder 19) in both seed files
+- Removed sticky back button bar above iframe in `/bots/[slug]/page.tsx` - games have their own built-in back buttons inside the HTML
+- Changed iframe layout from `flex-col h-screen` with separate header to `h-screen w-screen` full viewport (no wrapper header)
+- Rewrote `ensureGamesSeeded()` to always sync DB with code using upsert (not just when count === 0)
+- Added caching to `ensureGamesSeeded()` so it runs only once per server instance
+- Added `nmines` to removedSlugs → changed to `rocket_queen` in removedSlugs
+- Discovered local repo was linked to wrong Vercel project (`my-project` instead of `win-bots`)
+- Found correct project `prj_evv4cfYTE2Jq2r5scDdlgq76eXMe` (win-bots) with DATABASE_URL and DIRECT_URL env vars
+- Relinked `.vercel/project.json` to `win-bots` project
+- Created `.vercelignore` to exclude local `.env` and `db/` from Vercel deployments
+- Restored `directUrl` in Prisma schema (win-bots project has DIRECT_URL set)
+- Successfully deployed to production at https://win-bots.vercel.app
+- Verified all 5 bot HTML files return 200 with proper CSP headers (frame-ancestors: self, X-Frame-Options: ALLOWALL)
+
+Stage Summary:
+- Rocket Queen duplicate removed from seed data and will be auto-deleted from DB on next access
+- Nmines restored as free game (tier 1) with sortOrder 19
+- Double back button fixed - removed wrapper header, games use their own built-in back buttons
+- Iframe rendering improved - full viewport layout
+- DB sync mechanism improved - always upserts games instead of only seeding when empty
+- Deployed to correct Vercel project (win-bots)
+- All 5 bot game iframes verified accessible
