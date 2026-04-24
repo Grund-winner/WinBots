@@ -262,29 +262,17 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
     checkAccess();
   }, [checkAccess]);
 
-  // Block keyboard shortcuts and right-click
+  // Redirect to bot HTML page when access is granted
+  // This avoids double-iframe nesting (Next.js iframe + game iframe)
+  // which causes the 1win game to render blank
   useEffect(() => {
-    if (loading || !accessData?.access) return;
+    if (loading || !slug || !accessData?.access) return;
 
-    const blockContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-    };
-
-    const blockKeydown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'u') e.preventDefault();
-      if (e.ctrlKey && e.key === 's') e.preventDefault();
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
-      if (e.key === 'F12') e.preventDefault();
-    };
-
-    document.addEventListener('contextmenu', blockContextMenu);
-    document.addEventListener('keydown', blockKeydown);
-
-    return () => {
-      document.removeEventListener('contextmenu', blockContextMenu);
-      document.removeEventListener('keydown', blockKeydown);
-    };
-  }, [loading, accessData]);
+    const botSrc = getBotIframeSrc(slug);
+    if (botSrc) {
+      window.location.replace(botSrc);
+    }
+  }, [loading, slug, accessData]);
 
   // Loading state
   if (loading || !slug) {
@@ -302,22 +290,11 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
     return <Spinner />;
   }
 
-  // Access granted
+  // Access granted - showing spinner while redirecting to bot HTML
   const iframeSrc = getBotIframeSrc(slug);
   if (!iframeSrc) {
     return <ComingSoonPage gameName={accessData.game?.name ?? slug} />;
   }
 
-  return (
-    <div className="h-screen w-screen overflow-hidden bg-black">
-      {/* Iframe fills entire viewport - games have their own built-in back buttons */}
-      <iframe
-        src={iframeSrc}
-        className="w-full h-full border-0"
-        title={accessData.game?.name ?? 'Bot'}
-        allow="autoplay; fullscreen; clipboard-write"
-        onContextMenu={(e) => e.preventDefault()}
-      />
-    </div>
-  );
+  return <Spinner />;
 }
