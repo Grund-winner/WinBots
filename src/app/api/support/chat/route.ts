@@ -6,7 +6,7 @@ import { getSiteConfig } from '@/lib/config';
 // ─── OpenRouter API Config ────────────────────────────────────────────────
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
+const OPENROUTER_MODEL = 'inclusionai/ling-2.6-flash:free';
 const TIMEOUT_MS = 15_000;
 
 function getApiKey(): string | null {
