@@ -3,19 +3,20 @@ import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
 import { sanitizeString, truncate } from '@/lib/sanitize';
 import { getSiteConfig } from '@/lib/config';
 
-// ─── Groq API Key Management ────────────────────────────────────────────────
+// ─── Gemini API Key Management ─────────────────────────────────────────────
 
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 const failedKeys = new Map<string, number>();
 const COOLDOWN_MS = 60_000;
 
 function getAvailableKeys(): string[] {
   const keys: string[] = [];
   for (let i = 1; i <= 5; i++) {
-    const key = process.env[`GROQ_API_KEY_${i}`];
+    const key = process.env[`GEMINI_API_KEY_${i}`];
     if (key && key.trim()) keys.push(key.trim());
   }
   if (keys.length === 0) {
-    const singleKey = process.env.GROQ_API_KEY;
+    const singleKey = process.env.GEMINI_API_KEY;
     if (singleKey && singleKey.trim()) keys.push(singleKey.trim());
   }
   return keys;
@@ -331,7 +332,7 @@ export async function POST(request: NextRequest) {
 
       try {
         const response = await fetch(
-          'https://api.groq.com/openai/v1/chat/completions',
+          GEMINI_BASE,
           {
             method: 'POST',
             headers: {
@@ -339,7 +340,7 @@ export async function POST(request: NextRequest) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'gemini-2.0-flash',
               messages: apiMessages,
               max_tokens: 250,
               temperature: 0.3,
@@ -349,15 +350,15 @@ export async function POST(request: NextRequest) {
           }
         );
 
-        if (response.status === 429) {
+        if (response.status === 429 || response.status === 403) {
           markKeyFailed(key);
-          lastError = 'Key rate limited (429)';
+          lastError = `Key error ${response.status}`;
           continue;
         }
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
-          console.error('Groq API error:', response.status, errorData);
+          console.error('Gemini API error:', response.status, errorData);
           lastError = `API error ${response.status}`;
           if (response.status >= 500) markKeyFailed(key);
           continue;
@@ -385,7 +386,7 @@ export async function POST(request: NextRequest) {
     }
 
     // All keys failed
-    console.error('All Groq keys failed. Last error:', lastError);
+    console.error('All Gemini keys failed. Last error:', lastError);
     const fallbackReplies = [
       'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram.',
       'Bonjour ! Notre systeme est temporairement indisponible. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
