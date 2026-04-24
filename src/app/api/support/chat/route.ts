@@ -3,49 +3,16 @@ import { rateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limiter';
 import { sanitizeString, truncate } from '@/lib/sanitize';
 import { getSiteConfig } from '@/lib/config';
 
-// ─── Gemini API Key Management ─────────────────────────────────────────────
+// ─── OpenRouter API Config ────────────────────────────────────────────────
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-const failedKeys = new Map<string, number>();
-const COOLDOWN_MS = 60_000;
+const OPENROUTER_BASE = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free';
+const TIMEOUT_MS = 15_000;
 
-function getAvailableKeys(): string[] {
-  const keys: string[] = [];
-  for (let i = 1; i <= 5; i++) {
-    const key = process.env[`GEMINI_API_KEY_${i}`];
-    if (key && key.trim()) keys.push(key.trim());
-  }
-  if (keys.length === 0) {
-    const singleKey = process.env.GEMINI_API_KEY;
-    if (singleKey && singleKey.trim()) keys.push(singleKey.trim());
-  }
-  return keys;
-}
-
-function getWorkingKey(): string | null {
-  const keys = getAvailableKeys();
-  const now = Date.now();
-  const available = keys.filter((key) => {
-    const failTime = failedKeys.get(key);
-    if (!failTime) return true;
-    if (now > failTime) { failedKeys.delete(key); return true; }
-    return false;
-  });
-  if (available.length === 0) {
-    let soonestKey: string | null = null;
-    let soonestTime = Infinity;
-    for (const key of keys) {
-      const failTime = failedKeys.get(key);
-      if (failTime && failTime < soonestTime) { soonestTime = failTime; soonestKey = key; }
-    }
-    if (soonestKey && now >= soonestTime) { failedKeys.delete(soonestKey!); return soonestKey; }
-    return null;
-  }
-  return available[Math.floor(Math.random() * available.length)];
-}
-
-function markKeyFailed(key: string) {
-  failedKeys.set(key, Date.now() + COOLDOWN_MS);
+function getApiKey(): string | null {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (key && key.trim()) return key.trim();
+  return null;
 }
 
 // ─── Build dynamic system prompt ────────────────────────────────────────────
@@ -299,7 +266,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build the messages array for Gemini
+    // Build the messages array for OpenRouter
     const apiMessages = [
       { role: 'system', content: systemPrompt + webContext },
       ...sanitizedMessages.map((m: { role: string; content: string }) => ({
@@ -308,8 +275,8 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    // Get a working API key
-    const apiKey = getWorkingKey();
+    // Get API key
+    const apiKey = getApiKey();
 
     if (!apiKey) {
       const fallbackReplies = [
@@ -321,79 +288,54 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Try calling Groq API with failover
-    const allKeys = getAvailableKeys();
-    let lastError: string | null = null;
-
-    for (const key of allKeys) {
-      const failTime = failedKeys.get(key);
-      const now = Date.now();
-      if (failTime && now < failTime) continue;
-
-      try {
-        const response = await fetch(
-          GEMINI_BASE,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${key}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              model: 'gemini-2.0-flash',
-              messages: apiMessages,
-              max_tokens: 250,
-              temperature: 0.3,
-              top_p: 0.8,
-            }),
-            signal: AbortSignal.timeout(15000),
-          }
-        );
-
-        if (response.status === 429 || response.status === 403) {
-          markKeyFailed(key);
-          lastError = `Key error ${response.status}`;
-          continue;
+    // Call OpenRouter API
+    try {
+      const response = await fetch(
+        OPENROUTER_BASE,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://win-bots.vercel.app',
+            'X-Title': 'WinBots Support',
+          },
+          body: JSON.stringify({
+            model: OPENROUTER_MODEL,
+            messages: apiMessages,
+            max_tokens: 250,
+            temperature: 0.3,
+            top_p: 0.8,
+          }),
+          signal: AbortSignal.timeout(TIMEOUT_MS),
         }
+      );
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          console.error('Gemini API error:', response.status, errorData);
-          lastError = `API error ${response.status}`;
-          if (response.status >= 500) markKeyFailed(key);
-          continue;
-        }
-
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content?.trim();
-
-        if (!reply) {
-          lastError = 'Empty response';
-          continue;
-        }
-
-        return NextResponse.json({ reply });
-      } catch (fetchError: any) {
-        if (fetchError?.name === 'TimeoutError') {
-          markKeyFailed(key);
-          lastError = 'Request timeout';
-          continue;
-        }
-        console.error('Gemini fetch error:', fetchError);
-        lastError = fetchError?.message || 'Unknown error';
-        continue;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('OpenRouter API error:', response.status, errorData);
+        throw new Error(`API error ${response.status}`);
       }
-    }
 
-    // All keys failed
-    console.error('All Gemini keys failed. Last error:', lastError);
-    const fallbackReplies = [
-      'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram.',
-      'Bonjour ! Notre systeme est temporairement indisponible. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
-    ];
-    return NextResponse.json({
-      reply: fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)],
-    });
+      const data = await response.json();
+      const reply = data.choices?.[0]?.message?.content?.trim();
+
+      if (!reply) {
+        throw new Error('Empty response from API');
+      }
+
+      return NextResponse.json({ reply });
+    } catch (fetchError: any) {
+      console.error('OpenRouter fetch error:', fetchError);
+      // Fallback reply
+      const fallbackReplies = [
+        'Merci pour votre message ! Notre equipe va vous repondre dans les plus brefs delais. En attendant, n\'hesitez pas a nous contacter sur WhatsApp ou Telegram.',
+        'Bonjour ! Notre systeme est temporairement indisponible. Pour une assistance immediate, veuillez utiliser notre support WhatsApp ou Telegram disponible dans le menu.',
+      ];
+      return NextResponse.json({
+        reply: fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)],
+      });
+    }
   } catch (error) {
     console.error('Support chat error:', error);
     return NextResponse.json(
@@ -402,4 +344,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
