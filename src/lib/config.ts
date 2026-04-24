@@ -68,7 +68,7 @@ export async function ensureGamesSeeded(): Promise<void> {
     { name: 'Tropicana', slug: 'tropicana', image: '/games/tropicana.avif', description: 'Prediction Tropicana avec tendances tropicales', color: 'bg-lime-500', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 16, showOnLanding: false },
     { name: 'Plinko', slug: 'plinko', image: '/games/plinko.avif', description: 'Prediction Plinko avec calcul de trajectoire', color: 'bg-sky-600', icon: 'Zap', unlockType: 'referral', unlockValue: 30, tier: 6, sortOrder: 17, showOnLanding: false },
     { name: 'RocketX', slug: 'rocketx', image: '/games/rocketx.avif', description: 'Prediction RocketX avec forecast avance', color: 'bg-red-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 18, showOnLanding: false },
-    { name: 'Nmines', slug: 'nmines', image: '/games/nmines.avif', description: 'Prediction Nmines avec detection avancee', color: 'bg-orange-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 19, showOnLanding: false },
+    { name: 'Rocket Queen', slug: 'rocket_queen', image: '/games/rocketqueen.avif', description: 'Predictions Rocket Queen', color: 'bg-pink-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 19, showOnLanding: false },
     ];
 
     for (const game of GAMES) {
@@ -77,26 +77,14 @@ export async function ensureGamesSeeded(): Promise<void> {
     console.log(`${GAMES.length} games auto-seeded.`);
   }
 
-  // Always ensure Rocket Queen exists (added after initial seed)
-  const rocketQueen = await db.game.findUnique({ where: { slug: 'rocket_queen' } });
-  if (!rocketQueen) {
-    await db.game.create({
-      data: {
-        name: 'Rocket Queen',
-        slug: 'rocket_queen',
-        image: '/games/rocketqueen.avif',
-        description: 'Predictions Rocket Queen',
-        color: 'bg-pink-600',
-        icon: 'Zap',
-        unlockType: 'free',
-        unlockValue: 0,
-        tier: 4,
-        sortOrder: 20,
-        showOnLanding: false,
-        isActive: true,
-      },
-    });
-    console.log('Rocket Queen game auto-seeded.');
+  // Remove games that were deleted from the seed list
+  const removedSlugs = ['nmines'];
+ for (const slug of removedSlugs) {
+    const exists = await db.game.findUnique({ where: { slug } });
+    if (exists) {
+      await db.game.delete({ where: { slug } });
+      console.log(`Removed old game: ${slug}`);
+    }
   }
 }
 
