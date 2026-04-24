@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build the messages array for Groq
+    // Build the messages array for Gemini
     const apiMessages = [
       { role: 'system', content: systemPrompt + webContext },
       ...sanitizedMessages.map((m: { role: string; content: string }) => ({
@@ -379,7 +379,7 @@ export async function POST(request: NextRequest) {
           lastError = 'Request timeout';
           continue;
         }
-        console.error('Groq fetch error:', fetchError);
+        console.error('Gemini fetch error:', fetchError);
         lastError = fetchError?.message || 'Unknown error';
         continue;
       }
