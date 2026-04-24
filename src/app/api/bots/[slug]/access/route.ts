@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
+import { ensureGamesSeeded } from '@/lib/config';
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -9,6 +10,9 @@ interface RouteParams {
 export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
+
+    // Ensure all games exist (including Rocket Queen)
+    await ensureGamesSeeded();
 
     // 1. Check authentication
     const user = await getSession();

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { SLUG_TO_FOLDER, getBotIframeSrc } from '@/lib/bot-games';
 
 type AccessReason = 'not_authenticated' | 'not_found' | 'locked';
@@ -22,6 +21,13 @@ interface LockedInfo {
   unlockType: string;
   unlockValue: number;
   currentUserValue: number;
+}
+
+// Navigate back to the SPA home page with bots tab
+function goBackToBots() {
+  if (typeof window !== 'undefined') {
+    window.location.href = '/#bots';
+  }
 }
 
 // Arrow left SVG icon
@@ -73,8 +79,6 @@ function Spinner() {
 
 // Locked state page
 function LockedPage({ info }: { info: LockedInfo }) {
-  const router = useRouter();
-
   const progressPercent = info.unlockValue > 0
     ? Math.min(100, (info.currentUserValue / info.unlockValue) * 100)
     : 0;
@@ -84,7 +88,7 @@ function LockedPage({ info }: { info: LockedInfo }) {
       <div className="w-full max-w-sm">
         {/* Back button */}
         <button
-          onClick={() => router.push('/dashboard?tab=bots')}
+          onClick={goBackToBots}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm"
         >
           <ArrowLeftIcon className="w-4 h-4" />
@@ -144,7 +148,7 @@ function LockedPage({ info }: { info: LockedInfo }) {
 
           {/* Back button */}
           <button
-            onClick={() => router.push('/dashboard?tab=bots')}
+            onClick={goBackToBots}
             className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-medium text-slate-300 transition-colors border border-slate-700"
           >
             Retour aux bots
@@ -157,8 +161,6 @@ function LockedPage({ info }: { info: LockedInfo }) {
 
 // Not found page
 function NotFoundPage() {
-  const router = useRouter();
-
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
@@ -171,7 +173,7 @@ function NotFoundPage() {
         <h2 className="text-lg font-semibold text-white mb-2">Jeu non trouve</h2>
         <p className="text-slate-400 text-sm mb-6">Ce bot n&apos;existe pas ou n&apos;est plus disponible.</p>
         <button
-          onClick={() => router.push('/dashboard?tab=bots')}
+          onClick={goBackToBots}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mx-auto"
         >
           <ArrowLeftIcon className="w-4 h-4" />
@@ -184,8 +186,6 @@ function NotFoundPage() {
 
 // Coming soon page
 function ComingSoonPage({ gameName }: { gameName: string }) {
-  const router = useRouter();
-
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
       <div className="w-full max-w-sm text-center">
@@ -198,7 +198,7 @@ function ComingSoonPage({ gameName }: { gameName: string }) {
         <h2 className="text-lg font-semibold text-white mb-2">{gameName}</h2>
         <p className="text-slate-400 text-sm mb-6">Jeu bientot disponible</p>
         <button
-          onClick={() => router.push('/dashboard?tab=bots')}
+          onClick={goBackToBots}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm mx-auto"
         >
           <ArrowLeftIcon className="w-4 h-4" />
@@ -214,7 +214,6 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
   const [loading, setLoading] = useState(true);
   const [accessData, setAccessData] = useState<AccessResponse | null>(null);
   const [lockedInfo, setLockedInfo] = useState<LockedInfo | null>(null);
-  const router = useRouter();
 
   // Resolve params
   useEffect(() => {
@@ -231,7 +230,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
       setAccessData(data);
 
       if (!data.access && data.reason === 'not_authenticated') {
-        router.push('/dashboard?tab=bots');
+        goBackToBots();
         return;
       }
 
@@ -257,7 +256,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
     } finally {
       setLoading(false);
     }
-  }, [slug, router]);
+  }, [slug]);
 
   useEffect(() => {
     checkAccess();
@@ -272,22 +271,10 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
     };
 
     const blockKeydown = (e: KeyboardEvent) => {
-      // Block Ctrl+U (view source)
-      if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-      }
-      // Block Ctrl+S (save page)
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-      }
-      // Block Ctrl+Shift+I (dev tools)
-      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault();
-      }
-      // Block F12 (dev tools)
-      if (e.key === 'F12') {
-        e.preventDefault();
-      }
+      if (e.ctrlKey && e.key === 'u') e.preventDefault();
+      if (e.ctrlKey && e.key === 's') e.preventDefault();
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
+      if (e.key === 'F12') e.preventDefault();
     };
 
     document.addEventListener('contextmenu', blockContextMenu);
@@ -310,7 +297,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
       return <NotFoundPage />;
     }
     if (accessData?.reason === 'locked' && lockedInfo) {
-      return <LockedPage info={lockedInfo} />;
+      return <LockedPage info={lockedInfo />;
     }
     return <Spinner />;
   }
@@ -327,7 +314,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
       <div className="sticky top-0 z-50 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-slate-800/50">
         <div className="flex items-center h-11 px-3">
           <button
-            onClick={() => router.push('/dashboard?tab=bots')}
+            onClick={goBackToBots}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm py-1.5 px-2 rounded-lg hover:bg-slate-800/50"
           >
             <ArrowLeftIcon className="w-4 h-4" />

@@ -18,9 +18,32 @@ const RouterContext = createContext<RouterContextType>({
   goBack: () => {},
 });
 
+const HASH_TO_PAGE: Record<string, Page> = {
+  bots: 'bots',
+  referrals: 'referrals',
+  leaderboard: 'leaderboard',
+  admin: 'admin',
+  dashboard: 'dashboard',
+};
+
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [pageHistory, setPageHistory] = useState<Page[]>(['landing']);
+  const [initialized, setInitialized] = useState(false);
+
+  // Handle hash-based navigation (e.g. /#bots from bot game back button)
+  useEffect(() => {
+    if (initialized) return;
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash && hash in HASH_TO_PAGE) {
+      setCurrentPage(HASH_TO_PAGE[hash]);
+      // Clean the hash so it doesn't interfere on refresh
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    setInitialized(true);
+  }, [initialized]);
 
   const navigate = (page: Page) => {
     setPageHistory(prev => [...prev, currentPage]);

@@ -46,9 +46,9 @@ export function invalidateCache(): void {
 // Auto-seed games (safe to run on every request)
 export async function ensureGamesSeeded(): Promise<void> {
   const count = await db.game.count();
-  if (count > 0) return; // Games already exist, skip
-
-  const GAMES = [
+  if (count === 0) {
+    // Fresh deployment - seed all games
+    const GAMES = [
     { name: 'Aviator', slug: 'aviator', image: '/games/aviator.avif', description: 'Algorithme de prediction pour le jeu Aviator', color: 'bg-sky-500', icon: 'Plane', unlockType: 'free', unlockValue: 0, tier: 1, sortOrder: 0, showOnLanding: true },
     { name: 'Crash', slug: 'crash', image: '/games/crash.avif', description: 'Predictions avancees pour le jeu Crash', color: 'bg-red-500', icon: 'TrendingDown', unlockType: 'deposit', unlockValue: 5, tier: 2, sortOrder: 1, showOnLanding: true },
     { name: 'Dice', slug: 'dice', image: '/games/dice.avif', description: 'Prediction intelligente pour le jeu de des', color: 'bg-violet-500', icon: 'Dice5', unlockType: 'deposit', unlockValue: 5, tier: 2, sortOrder: 2, showOnLanding: true },
@@ -69,12 +69,35 @@ export async function ensureGamesSeeded(): Promise<void> {
     { name: 'Plinko', slug: 'plinko', image: '/games/plinko.avif', description: 'Prediction Plinko avec calcul de trajectoire', color: 'bg-sky-600', icon: 'Zap', unlockType: 'referral', unlockValue: 30, tier: 6, sortOrder: 17, showOnLanding: false },
     { name: 'RocketX', slug: 'rocketx', image: '/games/rocketx.avif', description: 'Prediction RocketX avec forecast avance', color: 'bg-red-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 18, showOnLanding: false },
     { name: 'Nmines', slug: 'nmines', image: '/games/nmines.avif', description: 'Prediction Nmines avec detection avancee', color: 'bg-orange-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 10, tier: 3, sortOrder: 19, showOnLanding: false },
-  ];
+    ];
 
-  for (const game of GAMES) {
-    await db.game.create({ data: game });
+    for (const game of GAMES) {
+      await db.game.create({ data: game });
+    }
+    console.log(`${GAMES.length} games auto-seeded.`);
   }
-  console.log(`${GAMES.length} games auto-seeded.`);
+
+  // Always ensure Rocket Queen exists (added after initial seed)
+  const rocketQueen = await db.game.findUnique({ where: { slug: 'rocket_queen' } });
+  if (!rocketQueen) {
+    await db.game.create({
+      data: {
+        name: 'Rocket Queen',
+        slug: 'rocket_queen',
+        image: '/games/rocketqueen.avif',
+        description: 'Predictions Rocket Queen',
+        color: 'bg-pink-600',
+        icon: 'Zap',
+        unlockType: 'deposit',
+        unlockValue: 20,
+        tier: 4,
+        sortOrder: 20,
+        showOnLanding: false,
+        isActive: true,
+      },
+    });
+    console.log('Rocket Queen game auto-seeded.');
+  }
 }
 
 // Seed default configs (called on every register/login)
