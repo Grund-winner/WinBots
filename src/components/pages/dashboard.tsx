@@ -403,8 +403,21 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
 
+              {/* Podium Rewards - Sport style */}
+              <Card className="border-0 shadow-sm bg-white mb-5 overflow-hidden">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-slate-900 text-sm mb-1">Recompenses mensuelles</h3>
+                  <p className="text-xs text-slate-500 mb-4">Les 3 meilleurs du mois gagnent des recompenses en argent.</p>
+                  <PodiumRewards
+                    firstReward={config.reward_first || '50'}
+                    secondReward={config.reward_second || '30'}
+                    thirdReward={config.reward_third || '20'}
+                  />
+                </CardContent>
+              </Card>
+
               {/* Leaderboard Mini */}
-              <Card className="border-0 shadow-sm bg-white mb-5">
+              <Card className="border-0 shadow-sm bg-white">
                 <CardHeader className="p-4 pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Classement mensuel</CardTitle>
@@ -413,31 +426,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
                   <LeaderboardMini />
-                </CardContent>
-              </Card>
-
-              {/* Rewards Info */}
-              <Card className="border-0 shadow-sm bg-white">
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-slate-900 text-sm mb-3">Recompenses mensuelles</h3>
-                  <p className="text-xs text-slate-500 mb-3">Les 3 meilleurs du mois gagnent des recompenses en argent.</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50">
-                      <div className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm">1</div>
-                      <div className="flex-1"><span className="font-medium text-slate-900 text-sm">Premier place</span></div>
-                      <span className="font-bold text-amber-700 text-sm">$50</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
-                      <div className="w-9 h-9 rounded-full bg-slate-400 text-white flex items-center justify-center font-bold text-sm">2</div>
-                      <div className="flex-1"><span className="font-medium text-slate-900 text-sm">Deuxieme place</span></div>
-                      <span className="font-bold text-slate-600 text-sm">$30</span>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-orange-50">
-                      <div className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-sm">3</div>
-                      <div className="flex-1"><span className="font-medium text-slate-900 text-sm">Troisieme place</span></div>
-                      <span className="font-bold text-orange-700 text-sm">$20</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -555,6 +543,160 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// Sport-style Podium SVG component
+function PodiumRewards({ firstReward, secondReward, thirdReward }: { firstReward: string; secondReward: string; thirdReward: string }) {
+  return (
+    <div className="w-full flex justify-center py-2">
+      <svg viewBox="0 0 420 280" className="w-full max-w-[420px]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          {/* Gold gradient - 1st place */}
+          <linearGradient id="goldFront" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F6D365" />
+            <stop offset="100%" stopColor="#D4A017" />
+          </linearGradient>
+          <linearGradient id="goldTop" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFE066" />
+            <stop offset="100%" stopColor="#F6D365" />
+          </linearGradient>
+          <linearGradient id="goldSide" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#B8860B" />
+            <stop offset="100%" stopColor="#8B6914" />
+          </linearGradient>
+          {/* Silver gradient - 2nd place */}
+          <linearGradient id="silverFront" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#D1D5DB" />
+            <stop offset="100%" stopColor="#9CA3AF" />
+          </linearGradient>
+          <linearGradient id="silverTop" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#E5E7EB" />
+            <stop offset="100%" stopColor="#D1D5DB" />
+          </linearGradient>
+          <linearGradient id="silverSide" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#6B7280" />
+            <stop offset="100%" stopColor="#4B5563" />
+          </linearGradient>
+          {/* Bronze gradient - 3rd place */}
+          <linearGradient id="bronzeFront" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#E8923F" />
+            <stop offset="100%" stopColor="#A0622A" />
+          </linearGradient>
+          <linearGradient id="bronzeTop" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F0A856" />
+            <stop offset="100%" stopColor="#E8923F" />
+          </linearGradient>
+          <linearGradient id="bronzeSide" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#7C4A1D" />
+            <stop offset="100%" stopColor="#5C3516" />
+          </linearGradient>
+          {/* Background gradient */}
+          <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#F8FAFC" />
+            <stop offset="100%" stopColor="#EFF6FF" />
+          </linearGradient>
+          {/* Shadow filter */}
+          <filter id="podiumShadow" x="-5%" y="-5%" width="115%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#1E293B" floodOpacity="0.15" />
+          </filter>
+          <filter id="rewardGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#1E293B" floodOpacity="0.1" />
+          </filter>
+          {/* Star sparkle filter */}
+          <filter id="starGlow">
+            <feGaussianBlur stdDeviation="1.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Background shape */}
+        <rect x="5" y="5" width="410" height="270" rx="20" fill="url(#bgGrad)" stroke="#E2E8F0" strokeWidth="1" />
+
+        {/* === DECORATIVE STARS on 1st place === */}
+        <g filter="url(#starGlow)">
+          <polygon points="210,52 212,58 218,58 213,62 215,68 210,64 205,68 207,62 202,58 208,58" fill="#F6D365" opacity="0.7" />
+          <polygon points="195,48 196.2,51.5 200,51.5 197,53.8 198.2,57.3 195,55 191.8,57.3 193,53.8 190,51.5 193.8,51.5" fill="#F6D365" opacity="0.5" transform="scale(0.7) translate(85,20)" />
+          <polygon points="225,50 226.2,53.5 230,53.5 227,55.8 228.2,59.3 225,57 221.8,59.3 223,55.8 220,53.5 223.8,53.5" fill="#F6D365" opacity="0.5" transform="scale(0.7) translate(90,18)" />
+        </g>
+
+        {/* === 2ND PLACE PODIUM (LEFT) === */}
+        <g filter="url(#podiumShadow)">
+          {/* Front face */}
+          <rect x="25" y="148" width="110" height="100" rx="4" fill="url(#silverFront)" />
+          {/* Top face (3D effect) - parallelogram */}
+          <polygon points="25,148 135,148 120,133 10,133" fill="url(#silverTop)" />
+          {/* Right side face (3D effect) */}
+          <polygon points="135,148 120,133 120,233 135,248" fill="url(#silverSide)" />
+          {/* Inner highlight on front */}
+          <rect x="30" y="153" width="100" height="3" rx="1.5" fill="white" opacity="0.3" />
+        </g>
+
+        {/* === 1ST PLACE PODIUM (CENTER) === */}
+        <g filter="url(#podiumShadow)">
+          {/* Front face */}
+          <rect x="155" y="78" width="110" height="170" rx="4" fill="url(#goldFront)" />
+          {/* Top face (3D effect) */}
+          <polygon points="155,78 265,78 250,63 140,63" fill="url(#goldTop)" />
+          {/* Right side face (3D effect) */}
+          <polygon points="265,78 250,63 250,233 265,248" fill="url(#goldSide)" />
+          {/* Inner highlight on front */}
+          <rect x="160" y="83" width="100" height="3" rx="1.5" fill="white" opacity="0.3" />
+          {/* Decorative stripe */}
+          <rect x="160" y="180" width="100" height="6" rx="3" fill="#FFE066" opacity="0.4" />
+          <rect x="160" y="210" width="100" height="6" rx="3" fill="#FFE066" opacity="0.4" />
+        </g>
+
+        {/* === 3RD PLACE PODIUM (RIGHT) === */}
+        <g filter="url(#podiumShadow)">
+          {/* Front face */}
+          <rect x="285" y="178" width="110" height="70" rx="4" fill="url(#bronzeFront)" />
+          {/* Top face (3D effect) */}
+          <polygon points="285,178 395,178 380,163 270,163" fill="url(#bronzeTop)" />
+          {/* Right side face (3D effect) */}
+          <polygon points="395,178 380,163 380,233 395,248" fill="url(#bronzeSide)" />
+          {/* Inner highlight on front */}
+          <rect x="290" y="183" width="100" height="3" rx="1.5" fill="white" opacity="0.3" />
+        </g>
+
+        {/* === REWARD AMOUNTS === */}
+        {/* 2nd place reward */}
+        <g filter="url(#rewardGlow)">
+          <rect x="42" y="105" width="76" height="26" rx="13" fill="white" stroke="#CBD5E1" strokeWidth="1" />
+          <text x="80" y="122.5" textAnchor="middle" className="text-xs" fill="#475569" fontFamily="system-ui, sans-serif" fontWeight="700" fontSize="13">${secondReward}</text>
+        </g>
+
+        {/* 1st place reward */}
+        <g filter="url(#rewardGlow)">
+          <rect x="169" y="35" width="82" height="26" rx="13" fill="white" stroke="#F6D365" strokeWidth="1.5" />
+          <text x="210" y="52.5" textAnchor="middle" fill="#92400E" fontFamily="system-ui, sans-serif" fontWeight="700" fontSize="13">${firstReward}</text>
+        </g>
+
+        {/* 3rd place reward */}
+        <g filter="url(#rewardGlow)">
+          <rect x="302" y="135" width="76" height="26" rx="13" fill="white" stroke="#CBD5E1" strokeWidth="1" />
+          <text x="340" y="152.5" textAnchor="middle" fill="#475569" fontFamily="system-ui, sans-serif" fontWeight="700" fontSize="13">${thirdReward}</text>
+        </g>
+
+        {/* === POSITION NUMBERS === */}
+        {/* 2nd place number */}
+        <text x="80" y="208" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="800" fontSize="32" opacity="0.9">2</text>
+
+        {/* 1st place number */}
+        <text x="210" y="168" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="800" fontSize="40" opacity="0.95">1</text>
+
+        {/* 3rd place number */}
+        <text x="340" y="222" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="800" fontSize="26" opacity="0.9">3</text>
+
+        {/* === POSITION LABELS === */}
+        <text x="80" y="238" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="600" fontSize="9" opacity="0.7">2E PLACE</text>
+        <text x="210" y="238" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="600" fontSize="10" opacity="0.75">1ERE PLACE</text>
+        <text x="340" y="238" textAnchor="middle" fill="white" fontFamily="system-ui, sans-serif" fontWeight="600" fontSize="9" opacity="0.7">3E PLACE</text>
+      </svg>
     </div>
   );
 }
