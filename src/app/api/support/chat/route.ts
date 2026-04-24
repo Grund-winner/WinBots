@@ -182,7 +182,7 @@ STYLE (TRES IMPORTANT) :
 
   Le depot se fait directement sur votre **compte 1win**."
 - Ne fais JAMAIS de longs paragraphes
-- Si incertain -> oriente vers la chaine WhatsApp${whatsappLink ? ` (${whatsappLink})` : ''} ou la chaine Telegram${telegramLink ? ` (${telegramLink})` : ''}, ou dis a l'utilisateur de revenir plus tard sur le Support IA
+- Si incertain -> oriente vers la chaine WhatsApp${whatsappLink ? ` (${whatsappLink})` : ''} ou la chaine Telegram${telegramLink ? ` (${telegramLink})` : ''}, ou dis a l'utilisateur de revenir plus tard sur le Support IA`;
 }
 
 // ─── Web search for 1win questions ──────────────────────────────────────────
@@ -277,7 +277,13 @@ export async function POST(request: NextRequest) {
     if (lastUserMsg && needsWebSearch(lastUserMsg.content)) {
       const searchResults = await searchWeb(lastUserMsg.content);
       if (searchResults) {
-        webContext = `\n\n[INFORMATIONS SUPPLEMENTAIRES ISSUES D'UNE RECHERCHE WEB SUR 1WIN]:\n${searchResults}\n[UTILISE CES INFORMATIONS POUR COMPLETER TA REPONSE SI RELEVANT]`;
+        webContext = [
+          '',
+          '',
+          '[INFORMATIONS SUPPLEMENTAIRES ISSUES D\'UNE RECHERCHE WEB SUR 1WIN]:',
+          searchResults,
+          '[UTILISE CES INFORMATIONS POUR COMPLETER TA REPONSE SI RELEVANT]',
+        ].join('\n');
       }
     }
 
