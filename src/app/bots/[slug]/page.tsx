@@ -315,7 +315,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
         src={iframeSrc}
         className="w-full h-full border-0"
         title={accessData.game?.name ?? 'Bot'}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"
+        allow="autoplay; fullscreen; clipboard-write"
         onContextMenu={(e) => e.preventDefault()}
       />
     </div>
