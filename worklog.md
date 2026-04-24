@@ -234,3 +234,30 @@ Stage Summary:
 - Session persistence: rolling renewal every 3.5 days + configs no longer reset on cold start
 - Game access protection: middleware redirects unauthenticated users from /games/bots/* to login
 - All changes deployed to https://win-bots.vercel.app
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Rocket X and Rocket Queen iframe cropping, session persistence, forgot password email
+
+Work Log:
+- Analyzed screenshots showing coefficient visibility issues in Rocket X and Rocket Queen iframes
+- Rocket X: Changed iframe top from -18% to -8% to shift game content down ~2.5cm
+- Rocket Queen: Changed iframe top from -18% to -12% to shift game content down ~1.5cm
+- Fixed session persistence: Added localStorage token fallback mechanism
+  - Login API now returns session token in response body
+  - Auth provider stores token in localStorage on login
+  - Session API accepts Authorization: Bearer token header as fallback
+  - When fallback succeeds, re-sets httpOnly cookie for future requests
+- Investigated forgot password email issue: Resend API key is in test mode
+  - Can only send to tgadsmanager21@gmail.com (registered Resend email)
+  - To send to other emails, domain must be verified at resend.com/domains
+  - Added detailed error logging for Resend API failures
+- Deployed all changes to Vercel production
+
+Stage Summary:
+- Rocket X iframe coefficient should now be visible (top shifted down 10%)
+- Rocket Queen iframe coefficient should now be visible (top shifted down 6%)
+- Session persistence improved with dual mechanism (cookie + localStorage fallback)
+- Forgot password: Resend domain verification needed - user must verify domain at resend.com/domains
+- Deployed to https://win-bots.vercel.app
