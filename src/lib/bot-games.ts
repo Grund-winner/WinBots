@@ -3,7 +3,6 @@ export const SLUG_TO_FOLDER: Record<string, string> = {
   fox: 'foxjob',
   lucky_jet: 'luckyjet',
   rocket: 'rocketqueen',
-  rocket_queen: 'rocketqueen',
   rocketx: 'rocketx',
   tropicana: 'tropicana',
 };
