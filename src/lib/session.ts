@@ -44,6 +44,18 @@ export async function getSession(): Promise<SessionUser | null> {
     }
     
     userId = sessionData.userId;
+
+    // Renew session: extend expiry each time it's used (rolling session)
+    const ageMs = now - createdAt;
+    const halfLifeMs = SESSION_EXPIRY_MS / 2;
+    if (ageMs > halfLifeMs) {
+      // Session is older than half its lifetime - renew it
+      const renewedData = JSON.stringify({ userId, createdAt: new Date().toISOString() });
+      await db.siteConfig.update({
+        where: { key: `session_${token}` },
+        data: { value: renewedData },
+      });
+    }
   } catch {
     // Legacy format: value is just the userId string
     // These are older sessions that don't have expiry - clean them up

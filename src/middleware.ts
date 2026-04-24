@@ -26,8 +26,17 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
 
-  // Allow bot game HTML files to be embedded in iframes on our own site
+  // Protect bot game HTML files - require session cookie
   if (pathname.startsWith('/games/bots/')) {
+    const sessionCookie = request.cookies.get('platform_session');
+    if (!sessionCookie || !sessionCookie.value) {
+      // No session cookie - redirect to login
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = '/';
+      loginUrl.hash = '#login';
+      return NextResponse.redirect(loginUrl);
+    }
+    // Session cookie exists - allow with iframe-friendly headers
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'ALLOWALL');
     response.headers.set('Content-Security-Policy', [

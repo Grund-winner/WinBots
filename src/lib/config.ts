@@ -78,33 +78,11 @@ export async function ensureGamesSeeded(): Promise<void> {
 
   gamesSyncPromise = (async () => {
     try {
-      // Upsert all games from seed data (idempotent)
+      // Only CREATE games that don't exist yet - never overwrite admin changes
       for (const game of GAMES_SEED) {
-        await db.game.upsert({
-          where: { slug: game.slug },
-          update: {
-            name: game.name,
-            image: game.image,
-            description: game.description,
-            color: game.color,
-            icon: game.icon,
-            unlockType: game.unlockType,
-            unlockValue: game.unlockValue,
-            tier: game.tier,
-            sortOrder: game.sortOrder,
-            showOnLanding: game.showOnLanding,
-            isActive: true,
-          },
-          create: game,
-        });
-      }
-
-      // Remove games no longer in seed
-      const allowedSlugs = new Set(GAMES_SEED.map(g => g.slug));
-      const existingGames = await db.game.findMany({ select: { slug: true } });
-      for (const g of existingGames) {
-        if (!allowedSlugs.has(g.slug)) {
-          await db.game.delete({ where: { slug: g.slug } });
+        const existing = await db.game.findUnique({ where: { slug: game.slug } });
+        if (!existing) {
+          await db.game.create({ data: game });
         }
       }
       gamesSynced = true;
@@ -131,12 +109,12 @@ export async function seedDefaultConfigs(): Promise<void> {
     platform_name: 'WinBots',
     platform_description: 'Debloquez des bots de prediction gratuits et gagnez de l\'argent avec le parrainage',
   };
+  // Only CREATE missing configs - never overwrite admin changes
   for (const [key, value] of Object.entries(defaults)) {
-    await db.siteConfig.upsert({
-      where: { key },
-      update: { value },
-      create: { key, value },
-    });
+    const existing = await db.siteConfig.findUnique({ where: { key } });
+    if (!existing) {
+      await db.siteConfig.create({ data: { key, value } });
+    }
   }
   invalidateCache();
 
