@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The screenshot displays a dark-themed web interface for \"DVYS\" (with \"LUCKYJET\" branding) featuring a central light gray placeholder area (likely for content), a \"Retour\" (back) button, and a prediction result showing \"3.19x\" (69% accuracy). Below, text describes \"L'intelligence DVYS en action 8 modules de prediction\" with tags like \"TENDANCE,\" \"SERIES,\" \"VOLATILITE,\" etc. The top-right corner shows \"Lucky Jet,\" and the header includes \"En vol #20.\"",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1777048262,
+  "id": "2026042500305830aa88b44a7d48a3",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "2026042500305830aa88b44a7d48a3",
+  "usage": {
+    "completion_tokens": 122,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 986,
+    "prompt_tokens_details": {
+      "cached_tokens": 5
+    },
+    "total_tokens": 1108
+  }
+}
