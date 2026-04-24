@@ -297,7 +297,7 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
       return <NotFoundPage />;
     }
     if (accessData?.reason === 'locked' && lockedInfo) {
-      return <LockedPage info={lockedInfo />;
+      return <LockedPage info={lockedInfo} />;
     }
     return <Spinner />;
   }
