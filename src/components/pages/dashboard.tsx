@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from '@/components/router';
+import { useRouter as useNextRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth-provider';
 import { useSiteConfig } from '@/components/config-provider';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RANK_THRESHOLDS, isGameUnlocked } from '@/lib/bots';
+import { hasBotPage } from '@/lib/bot-games';
 import { toast } from 'sonner';
 
 // WhatsApp SVG
@@ -74,6 +76,7 @@ interface GameData {
 
 export default function DashboardPage() {
   const { navigate } = useRouter();
+  const nextRouter = useNextRouter();
   const { user, logout } = useAuth();
   const { config } = useSiteConfig();
   const [stats, setStats] = useState<UserStats | null>(null);
@@ -339,7 +342,13 @@ export default function DashboardPage() {
                         transition={{ duration: 0.15, delay: index * 0.02 }}
                         whileTap={{ scale: 0.97 }}
                         className="group"
-                        onClick={() => { if (!isUnlocked) setLockedBotModal(game); }}
+                        onClick={() => {
+                          if (!isUnlocked) {
+                            setLockedBotModal(game);
+                          } else if (hasBotPage(game.slug)) {
+                            nextRouter.push(`/bots/${game.slug}`);
+                          }
+                        }}
                       >
                         <div
                           className={`relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer bg-slate-100 ${!isUnlocked ? 'opacity-50' : ''}`}
