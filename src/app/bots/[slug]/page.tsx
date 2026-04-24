@@ -309,26 +309,11 @@ export default function BotPage({ params }: { params: Promise<{ slug: string }> 
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0f]">
-      {/* Sticky back button */}
-      <div className="sticky top-0 z-50 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-slate-800/50">
-        <div className="flex items-center h-11 px-3">
-          <button
-            onClick={goBackToBots}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm py-1.5 px-2 rounded-lg hover:bg-slate-800/50"
-          >
-            <ArrowLeftIcon className="w-4 h-4" />
-            <span>Retour</span>
-          </button>
-          <div className="flex-1" />
-          <span className="text-xs text-slate-600 font-medium">{accessData.game?.name}</span>
-        </div>
-      </div>
-
-      {/* Iframe fills remaining space */}
+    <div className="h-screen w-screen overflow-hidden bg-black">
+      {/* Iframe fills entire viewport - games have their own built-in back buttons */}
       <iframe
         src={iframeSrc}
-        className="flex-1 w-full border-0 bg-black"
+        className="w-full h-full border-0"
         title={accessData.game?.name ?? 'Bot'}
         sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"
         onContextMenu={(e) => e.preventDefault()}

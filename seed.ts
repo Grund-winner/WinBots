@@ -21,7 +21,7 @@ const GAMES_DATA = [
   { name: 'Tropicana', slug: 'tropicana', image: 'tropicana.avif', description: 'Prediction Tropicana avec tendances tropicales', color: 'bg-lime-500', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 16, showOnLanding: false },
   { name: 'Plinko', slug: 'plinko', image: 'plinko.avif', description: 'Prediction Plinko avec calcul de trajectoire', color: 'bg-sky-600', icon: 'Zap', unlockType: 'referral', unlockValue: 30, tier: 6, sortOrder: 17, showOnLanding: false },
   { name: 'RocketX', slug: 'rocketx', image: 'rocketx.avif', description: 'Prediction RocketX avec forecast avance', color: 'bg-red-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 18, showOnLanding: false },
-  { name: 'Rocket Queen', slug: 'rocket_queen', image: 'rocketqueen.avif', description: 'Predictions Rocket Queen', color: 'bg-pink-600', icon: 'Zap', unlockType: 'deposit', unlockValue: 20, tier: 4, sortOrder: 19, showOnLanding: false },
+  { name: 'Nmines', slug: 'nmines', image: 'nmines.avif', description: 'Detecteur de mines avance Nmines', color: 'bg-yellow-600', icon: 'Bomb', unlockType: 'free', unlockValue: 0, tier: 1, sortOrder: 19, showOnLanding: false },
 ];
 
 async function seed() {

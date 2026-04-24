@@ -11,7 +11,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
   try {
     const { slug } = await params;
 
-    // Ensure all games exist (including Rocket Queen)
+    // Ensure all games exist
     await ensureGamesSeeded();
 
     // 1. Check authentication
