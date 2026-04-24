@@ -24,24 +24,38 @@ const securityHeaders = {
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
+  const { pathname } = request.nextUrl;
 
-  // Apply security headers
+  // Allow bot game HTML files to be embedded in iframes on our own site
+  if (pathname.startsWith('/games/bots/')) {
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'ALLOWALL');
+    response.headers.set('Content-Security-Policy', [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' https://fonts.gstatic.com data:",
+      "connect-src 'self' https:",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; '));
+    return response;
+  }
+
+  // Apply security headers for all other routes
   for (const [key, value] of Object.entries(securityHeaders)) {
     response.headers.set(key, value);
   }
 
   // Block access to sensitive paths
-  const { pathname } = request.nextUrl;
-  
-  // Block direct access to API admin routes (should only be called from the app)
-  // Note: This is defense in depth - the API routes themselves check auth
-  
   // Block access to .env files, source maps, etc.
   if (
     pathname.includes('.env') ||
     pathname.includes('.git') ||
     pathname.endsWith('.map') ||
-    pathname.includes('/.next/') && pathname.includes('server')
+    (pathname.includes('/.next/') && pathname.includes('server'))
   ) {
     return new NextResponse(null, { status: 404 });
   }
@@ -56,8 +70,7 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public files
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|logo\\.png|robots\\.txt).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico).*)',
   ],
 };
