@@ -211,3 +211,26 @@ Stage Summary:
 - ARCHITECTURE CHANGE: Bot pages now redirect to static HTML instead of wrapping in iframe
 - All 5 bots tested and working
 - Deployed to https://win-bots.vercel.app
+---
+Task ID: 1-4
+Agent: Main Agent
+Task: Fix coefficient visibility, block iframe interactions, session persistence, game access protection
+
+Work Log:
+- Analyzed all 4 crash game HTML files (rocketx, luckyjet, rocketqueen, tropicana) 
+- Changed iframe CSS: top:-10% → top:-18% to show more of the game top where coefficient is displayed
+- Reduced .ov-top overlay height: 15% → 10% to reveal the coefficient area
+- Added invisible overlay (.iframe-blocker) with z-index:10 on all 4 crash games to block all iframe clicks/scrolls
+- Added pointer-events:none to game iframes themselves as additional protection
+- Fixed ensureGamesSeeded() to use create-only (no upsert) - prevents admin config resets on server cold starts
+- Fixed seedDefaultConfigs() to only CREATE missing configs, never UPDATE existing ones
+- Added rolling session renewal in getSession() - sessions auto-renew at half-life (3.5 days)
+- Added middleware protection for /games/bots/* paths - redirects to login if no session cookie
+- Deployed to Vercel, verified all changes
+
+Stage Summary:
+- Rocket X iframe coefficient: top crop adjusted, overlay reduced - coefficient now visible
+- Iframe interaction blocking: invisible overlay + pointer-events:none on all crash games
+- Session persistence: rolling renewal every 3.5 days + configs no longer reset on cold start
+- Game access protection: middleware redirects unauthenticated users from /games/bots/* to login
+- All changes deployed to https://win-bots.vercel.app
