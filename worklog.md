@@ -113,3 +113,22 @@ Stage Summary:
 - Registration auto-unlocks all free games
 - All 20 games seeded with correct images, descriptions, colors, and unlock conditions
 - Zero lint errors, clean build
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix bot game pages - iframe sandbox, rocket slug mapping, back button
+
+Work Log:
+- Analyzed screenshot: Fox Job game page shows black screen in iframe (game shell renders but content is blank)
+- Found crash game HTML files (luckyjet, rocketqueen, rocketx, tropicana) have nested iframes requiring extended sandbox permissions
+- Updated iframe sandbox from "allow-scripts allow-same-origin" to include "allow-popups allow-forms allow-modals allow-top-navigation-by-user-activation"
+- Added "rocket" slug mapping to rocketqueen folder (both rocket and rocket_queen now point to rocketqueen game files)
+- Verified access API correctly handles free games (unlockType: 'free' → isUnlocked = true)
+- Verified back button navigation: goBackToBots() → window.location.href = '/#bots' → SPA router maps #bots to dashboard bots tab
+- Verified crash game internal back buttons use target="_top" which now works with updated sandbox
+
+Stage Summary:
+- Deployed to production at win-bots.vercel.app (commit 48f3576)
+- Fixed files: src/lib/bot-games.ts, src/app/bots/[slug]/page.tsx
+- Key fixes: extended iframe sandbox permissions, added rocket→rocketqueen mapping
